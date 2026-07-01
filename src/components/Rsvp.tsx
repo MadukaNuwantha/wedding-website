@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Divider from "./Divider";
+import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 const inputBase =
@@ -20,8 +21,10 @@ export default function Rsvp() {
   }
 
   return (
-    <section id="rsvp" className="bg-white px-5 py-24 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-xl">
+    <section id="rsvp" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+      <FloralCorner corner="tr" className="text-silver opacity-40" />
+      <FloralCorner corner="bl" className="text-silver opacity-40" />
+      <div className="relative mx-auto max-w-xl">
         <Reveal className="text-center">
           <p className="eyebrow">Kindly Reply</p>
           <h2 className="mt-4 font-script text-6xl text-navy sm:text-7xl">RSVP</h2>

@@ -1,4 +1,5 @@
 import Divider from "./Divider";
+import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 type Moment = { time: string; title: string; place: string };
@@ -23,8 +24,10 @@ const TIMELINE: Moment[] = [
 
 export default function Schedule() {
   return (
-    <section id="schedule" className="bg-cream px-5 py-24 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-3xl">
+    <section id="schedule" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+      <FloralCorner corner="tl" className="text-silver opacity-40" />
+      <FloralCorner corner="br" className="text-silver opacity-40" />
+      <div className="relative mx-auto max-w-3xl">
         <Reveal className="text-center">
           <p className="eyebrow">The Day</p>
           <h2 className="mt-4 font-serif text-4xl font-light text-navy sm:text-5xl">

@@ -39,7 +39,7 @@ export default function RootLayout({
       lang="en"
       className={`${greatVibes.variable} ${cormorant.variable} ${montserrat.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-ink">
+      <body className="min-h-full flex flex-col text-ink">
         {children}
       </body>
     </html>

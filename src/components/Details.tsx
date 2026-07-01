@@ -1,4 +1,5 @@
 import Divider from "./Divider";
+import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 type EventCard = {
@@ -49,8 +50,10 @@ function PinIcon() {
 
 export default function Details() {
   return (
-    <section id="details" className="bg-white px-5 py-24 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-5xl">
+    <section id="details" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+      <FloralCorner corner="tr" className="text-silver opacity-40" />
+      <FloralCorner corner="bl" className="text-silver opacity-40" />
+      <div className="relative mx-auto max-w-5xl">
         <Reveal className="text-center">
           <p className="eyebrow">When &amp; Where</p>
           <h2 className="mt-4 font-serif text-4xl font-light text-navy sm:text-5xl">

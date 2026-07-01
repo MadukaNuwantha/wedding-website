@@ -6,7 +6,7 @@ export default function Invitation() {
   return (
     <section
       id="invitation"
-      className="relative overflow-hidden bg-white px-5 py-24 sm:px-8 sm:py-28"
+      className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28"
     >
       {/* Floral corners, echoing the invitation card */}
       <FloralCorner corner="tl" className="text-silver-deep opacity-55" />

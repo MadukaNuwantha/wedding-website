@@ -1,11 +1,14 @@
 import Divider from "./Divider";
+import FloralCorner from "./FloralCorner";
 import Monogram from "./Monogram";
 import Reveal from "./Reveal";
 
 export default function Story() {
   return (
-    <section id="story" className="bg-cream px-5 py-24 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-3xl text-center">
+    <section id="story" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+      <FloralCorner corner="tl" className="text-silver opacity-40" />
+      <FloralCorner corner="br" className="text-silver opacity-40" />
+      <div className="relative mx-auto max-w-3xl text-center">
         <Reveal>
           <p className="eyebrow">Our Story</p>
           <h2 className="mt-4 font-serif text-4xl font-light text-navy sm:text-5xl">

@@ -3,7 +3,7 @@ import Monogram from "./Monogram";
 
 export default function Footer() {
   return (
-    <footer className="bg-cream px-5 py-20 text-center sm:px-8">
+    <footer className="px-5 py-20 text-center sm:px-8">
       <div className="mx-auto flex max-w-2xl flex-col items-center">
         <Garland className="w-56 sm:w-72" />
 
