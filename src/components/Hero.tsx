@@ -14,6 +14,9 @@ export default function Hero() {
         className="object-cover object-center"
       />
 
+      {/* Overlay to lower the photo's visibility */}
+      <div className="pointer-events-none absolute inset-0 bg-navy-deep/70" />
+
       {/* Legibility scrims — darker at top & bottom, faces stay clear in the middle */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-navy-deep/75 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-navy-deep/85 to-transparent" />
@@ -34,24 +37,20 @@ export default function Hero() {
             </span>
             <span className="silver-rule w-12 sm:w-16" />
           </div>
-          <div className="mt-7 flex flex-col items-center">
-            <div className="flex items-center gap-3">
-              <span className="silver-rule w-8" />
-              <span className="font-sans text-xs uppercase tracking-[0.32em] text-white/85 sm:text-sm">
-                Saturday
-              </span>
-              <span className="silver-rule w-8" />
-            </div>
-            <div className="mt-4 flex items-center gap-4 sm:gap-6">
-              <span className="font-sans text-sm uppercase tracking-[0.28em] text-white/85 sm:text-base">
+          <div className="mt-7 flex flex-col items-center text-white">
+            <span className="font-sans text-base font-light uppercase tracking-[0.28em] text-white/90 sm:text-lg">
+              Saturday
+            </span>
+            <div className="mt-2 flex items-center gap-5 sm:gap-7">
+              <span className="font-sans text-lg font-light uppercase tracking-[0.2em] text-white/90 sm:text-xl">
                 August
               </span>
-              <span className="h-10 w-px bg-white/50 sm:h-12" />
-              <span className="font-serif text-5xl font-light leading-none sm:text-6xl">
+              <span className="h-10 w-px bg-white/40 sm:h-14" />
+              <span className="font-sans text-5xl font-light text-white sm:text-7xl">
                 01
               </span>
-              <span className="h-10 w-px bg-white/50 sm:h-12" />
-              <span className="font-sans text-sm uppercase tracking-[0.28em] text-white/85 sm:text-base">
+              <span className="h-10 w-px bg-white/40 sm:h-14" />
+              <span className="font-sans text-lg font-light uppercase tracking-[0.2em] text-white/90 sm:text-xl">
                 2026
               </span>
             </div>
