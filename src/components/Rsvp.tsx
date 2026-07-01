@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import Divider from "./Divider";
-import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 const inputBase =
@@ -22,16 +21,14 @@ export default function Rsvp() {
 
   return (
     <section id="rsvp" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
-      <FloralCorner corner="tr" className="text-silver opacity-40" />
-      <FloralCorner corner="bl" className="text-silver opacity-40" />
       <div className="relative mx-auto max-w-xl">
         <Reveal className="text-center">
           <p className="eyebrow">Kindly Reply</p>
           <h2 className="mt-4 font-script text-6xl text-navy sm:text-7xl">RSVP</h2>
           <Divider className="mt-6" />
           <p className="mx-auto mt-6 max-w-md font-serif text-lg text-ink/70">
-            Your presence would mean the world to us. Please respond using the
-            invitation code from your card.
+            Your presence would mean the world to us. Kindly let us know if you
+            will be joining the celebration.
           </p>
         </Reveal>
 
@@ -59,20 +56,6 @@ export default function Rsvp() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-                <div>
-                  <label htmlFor="code" className={labelBase}>
-                    Invitation Code
-                  </label>
-                  <input
-                    id="code"
-                    name="code"
-                    type="text"
-                    placeholder="e.g. MM-2026"
-                    className={inputBase}
-                    autoComplete="off"
-                  />
-                </div>
-
                 <div>
                   <label htmlFor="name" className={labelBase}>
                     Full Name

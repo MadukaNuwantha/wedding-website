@@ -1,5 +1,4 @@
 import Divider from "./Divider";
-import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 export default function Invitation() {
@@ -8,12 +7,6 @@ export default function Invitation() {
       id="invitation"
       className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28"
     >
-      {/* Floral corners, echoing the invitation card */}
-      <FloralCorner corner="tl" className="text-silver-deep opacity-55" />
-      <FloralCorner corner="tr" className="text-silver-deep opacity-55" />
-      <FloralCorner corner="bl" className="text-silver-deep opacity-55" />
-      <FloralCorner corner="br" className="text-silver-deep opacity-55" />
-
       <div className="relative mx-auto max-w-2xl text-center">
         <Reveal>
           {/* Scripture */}

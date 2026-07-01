@@ -21,7 +21,11 @@ export default function Divider({ className = "", tone = "silver" }: DividerProp
       aria-hidden="true"
     >
       <span className="silver-rule w-16 sm:w-24" />
-      <span className="inline-block h-2 w-2 rotate-45 border border-current" />
+      <span className="flex items-center gap-2">
+        <span className="inline-block h-1 w-1 rounded-full bg-current" />
+        <span className="inline-block h-2.5 w-2.5 rotate-45 border border-current" />
+        <span className="inline-block h-1 w-1 rounded-full bg-current" />
+      </span>
       <span className="silver-rule w-16 sm:w-24" />
     </div>
   );

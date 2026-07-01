@@ -1,13 +1,10 @@
 import Divider from "./Divider";
-import FloralCorner from "./FloralCorner";
 import Monogram from "./Monogram";
 import Reveal from "./Reveal";
 
 export default function Story() {
   return (
     <section id="story" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
-      <FloralCorner corner="tl" className="text-silver opacity-40" />
-      <FloralCorner corner="br" className="text-silver opacity-40" />
       <div className="relative mx-auto max-w-3xl text-center">
         <Reveal>
           <p className="eyebrow">Our Story</p>
@@ -15,8 +12,8 @@ export default function Story() {
             We&rsquo;re getting{" "}
             <span className="italic text-silver-deep">married</span>
           </h2>
-          <div className="mt-8 flex justify-center text-silver">
-            <Monogram size={90} />
+          <div className="mt-8 flex justify-center text-navy">
+            <Monogram size={104} />
           </div>
         </Reveal>
 

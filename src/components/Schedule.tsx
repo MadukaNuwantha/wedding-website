@@ -1,5 +1,4 @@
 import Divider from "./Divider";
-import FloralCorner from "./FloralCorner";
 import Reveal from "./Reveal";
 
 type Moment = { time: string; title: string; place: string };
@@ -25,8 +24,6 @@ const TIMELINE: Moment[] = [
 export default function Schedule() {
   return (
     <section id="schedule" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
-      <FloralCorner corner="tl" className="text-silver opacity-40" />
-      <FloralCorner corner="br" className="text-silver opacity-40" />
       <div className="relative mx-auto max-w-3xl">
         <Reveal className="text-center">
           <p className="eyebrow">The Day</p>
@@ -60,7 +57,7 @@ export default function Schedule() {
 
               {/* Node */}
               <span
-                className={`absolute top-1.5 left-0 flex h-4 w-4 items-center justify-center rounded-full border border-silver bg-white shadow-[0_0_0_4px_rgba(255,255,255,1)] ${
+                className={`absolute top-1.5 left-0 flex h-4 w-4 items-center justify-center rounded-full border border-silver bg-white shadow-[0_0_0_4px_rgba(244,247,251,1)] ${
                   i % 2 === 0 ? "sm:-left-2" : "sm:left-auto sm:-right-2"
                 }`}
                 aria-hidden="true"

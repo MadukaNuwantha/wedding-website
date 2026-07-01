@@ -34,9 +34,28 @@ export default function Hero() {
             </span>
             <span className="silver-rule w-12 sm:w-16" />
           </div>
-          <p className="mt-6 font-sans text-base font-medium uppercase tracking-[0.32em] text-white sm:text-xl">
-            Saturday · 01 August 2026
-          </p>
+          <div className="mt-7 flex flex-col items-center">
+            <div className="flex items-center gap-3">
+              <span className="silver-rule w-8" />
+              <span className="font-sans text-xs uppercase tracking-[0.32em] text-white/85 sm:text-sm">
+                Saturday
+              </span>
+              <span className="silver-rule w-8" />
+            </div>
+            <div className="mt-4 flex items-center gap-4 sm:gap-6">
+              <span className="font-sans text-sm uppercase tracking-[0.28em] text-white/85 sm:text-base">
+                August
+              </span>
+              <span className="h-10 w-px bg-white/50 sm:h-12" />
+              <span className="font-serif text-5xl font-light leading-none sm:text-6xl">
+                01
+              </span>
+              <span className="h-10 w-px bg-white/50 sm:h-12" />
+              <span className="font-sans text-sm uppercase tracking-[0.28em] text-white/85 sm:text-base">
+                2026
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Bottom block */}

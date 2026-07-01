@@ -16,8 +16,8 @@ export default function Footer() {
           with you.
         </p>
 
-        <div className="mt-10 text-silver">
-          <Monogram size={72} />
+        <div className="mt-10 text-navy">
+          <Monogram size={84} />
         </div>
 
         <p className="mt-6 font-script text-4xl text-navy sm:text-5xl">
