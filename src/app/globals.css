@@ -13,13 +13,13 @@
   --color-silver-light: #cdd6e2;
   --color-silver-deep: #6d798d;
 
-  --color-cream: #f7f3ec;
-  --color-cream-deep: #efe9dd;
-  --color-ivory: #fdfbf7;
+  --color-cream: #ffffff;
+  --color-cream-deep: #ffffff;
+  --color-ivory: #ffffff;
   --color-ink: #1b2a44;
-  --color-line: #e7e1d5;
+  --color-line: #e4e8ef;
 
-  --color-background: #f7f3ec;
+  --color-background: #ffffff;
   --color-foreground: #1b2a44;
 
   --font-script: var(--font-great-vibes);

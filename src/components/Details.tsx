@@ -57,9 +57,30 @@ export default function Details() {
             The Details
           </h2>
           <Divider className="mt-6" />
-          <p className="mx-auto mt-6 max-w-xl font-serif text-lg italic text-ink/65">
-            The first of August, two thousand and twenty-six
-          </p>
+
+          {/* Elegant date treatment: SATURDAY  ·  AUGUST | 01 | 2026 */}
+          <div className="mt-8 flex flex-col items-center text-navy">
+            <div className="flex items-center gap-3 text-silver-deep">
+              <span className="silver-rule w-8" />
+              <span className="font-sans text-xs uppercase tracking-[0.32em]">
+                Saturday
+              </span>
+              <span className="silver-rule w-8" />
+            </div>
+            <div className="mt-4 flex items-center gap-4 sm:gap-6">
+              <span className="font-sans text-sm uppercase tracking-[0.28em] text-silver-deep sm:text-base">
+                August
+              </span>
+              <span className="h-10 w-px bg-silver-light sm:h-12" />
+              <span className="font-serif text-5xl font-light leading-none sm:text-6xl">
+                01
+              </span>
+              <span className="h-10 w-px bg-silver-light sm:h-12" />
+              <span className="font-sans text-sm uppercase tracking-[0.28em] text-silver-deep sm:text-base">
+                2026
+              </span>
+            </div>
+          </div>
         </Reveal>
 
         <div className="mt-14 grid gap-7 md:grid-cols-2">

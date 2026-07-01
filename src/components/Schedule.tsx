@@ -16,7 +16,7 @@ const TIMELINE: Moment[] = [
   },
   {
     time: "4:00 PM",
-    title: "Farewell",
+    title: "Conclusion",
     place: "Celebrations conclude",
   },
 ];
@@ -57,7 +57,7 @@ export default function Schedule() {
 
               {/* Node */}
               <span
-                className={`absolute top-1.5 left-0 flex h-4 w-4 items-center justify-center rounded-full border border-silver bg-white shadow-[0_0_0_4px_rgba(247,243,236,1)] ${
+                className={`absolute top-1.5 left-0 flex h-4 w-4 items-center justify-center rounded-full border border-silver bg-white shadow-[0_0_0_4px_rgba(255,255,255,1)] ${
                   i % 2 === 0 ? "sm:-left-2" : "sm:left-auto sm:-right-2"
                 }`}
                 aria-hidden="true"
