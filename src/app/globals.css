@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Maduka & Marine — Light & Airy theme
+   Palette: warm ivory paper · Navy Blue · Silver
+--------------------------------------------------------------------------- */
+@theme {
+  --color-navy-deep: #0b1a33;
+  --color-navy: #14294b;
+  --color-navy-600: #24406b;
+
+  --color-silver: #8f9cb0;
+  --color-silver-light: #cdd6e2;
+  --color-silver-deep: #6d798d;
+
+  --color-cream: #f7f3ec;
+  --color-cream-deep: #efe9dd;
+  --color-ivory: #fdfbf7;
+  --color-ink: #1b2a44;
+  --color-line: #e7e1d5;
+
+  --color-background: #f7f3ec;
+  --color-foreground: #1b2a44;
+
+  --font-script: var(--font-great-vibes);
+  --font-serif: var(--font-cormorant);
+  --font-sans: var(--font-montserrat);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 2rem;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Uppercase micro-label above section titles */
+.eyebrow {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-silver-deep);
+}
+
+/* Ornamental silver rule */
+.silver-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-silver) 20%,
+    var(--color-silver-deep) 50%,
+    var(--color-silver) 80%,
+    transparent
+  );
+}
+
+/* White paper card */
+.card {
+  background: #ffffff;
+  border: 1px solid var(--color-line);
+  box-shadow: 0 20px 55px -30px rgba(20, 41, 75, 0.3);
+}
+.card-hover {
+  transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 30px 70px -30px rgba(20, 41, 75, 0.42);
+  transform: translateY(-4px);
+  border-color: var(--color-silver-light);
+}
+
+/* Cathedral-arch photo frame */
+.photo-arch {
+  border-radius: 999px 999px 18px 18px;
+}
+
+/* Cinematic scroll reveal: fade + lift + subtle scale + defocus */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px) scale(0.986);
+  filter: blur(4px);
+  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.9s ease;
+  will-change: opacity, transform, filter;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(9px); }
+}
+.float-slow {
+  animation: floatY 2.6s ease-in-out infinite;
+}
+
+/* Subtle paper grain */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; filter: none; transition: none; }
+  .float-slow { animation: none; }
+}
