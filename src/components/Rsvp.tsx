@@ -9,7 +9,7 @@ const inputBase =
 const labelBase =
   "mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.16em] text-navy-600";
 
-export default function Rsvp() {
+export default function Rsvp({ guestName }: { guestName?: string }) {
   const [attending, setAttending] = useState<"yes" | "no" | "">("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -26,6 +26,11 @@ export default function Rsvp() {
           <p className="eyebrow">Kindly Reply</p>
           <h2 className="mt-4 font-script text-6xl text-navy sm:text-7xl">RSVP</h2>
           <Divider className="mt-6" />
+          {guestName && (
+            <p className="mt-6 font-script text-4xl text-navy sm:text-5xl">
+              Dear {guestName},
+            </p>
+          )}
           <p className="mx-auto mt-6 max-w-md font-serif text-lg text-ink/70">
             Your presence would mean the world to us. Kindly let us know if you
             will be joining the celebration.
@@ -56,19 +61,6 @@ export default function Rsvp() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-                <div>
-                  <label htmlFor="name" className={labelBase}>
-                    Full Name
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    placeholder="Your name"
-                    className={inputBase}
-                  />
-                </div>
-
                 <fieldset>
                   <span className={labelBase}>Will you attend?</span>
                   <div className="grid grid-cols-2 gap-3">

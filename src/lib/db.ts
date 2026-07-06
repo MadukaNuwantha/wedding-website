@@ -1,0 +1,35 @@
+import { createClient, type Client } from "@libsql/client";
+
+/**
+ * libSQL client. In development it uses a local SQLite file; in production
+ * it connects to Turso when TURSO_DATABASE_URL / TURSO_AUTH_TOKEN are set.
+ * The same code path works for both.
+ */
+
+let _client: Client | null = null;
+let _ready: Promise<void> | null = null;
+
+function makeClient(): Client {
+  const url = process.env.TURSO_DATABASE_URL ?? "file:local.db";
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  return createClient(authToken ? { url, authToken } : { url });
+}
+
+async function ensureSchema(client: Client): Promise<void> {
+  await client.execute(`
+    CREATE TABLE IF NOT EXISTS guests (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      token      TEXT NOT NULL UNIQUE,
+      created_at INTEGER NOT NULL
+    )
+  `);
+}
+
+/** Get the shared client, ensuring the schema exists once per process. */
+export async function db(): Promise<Client> {
+  if (!_client) _client = makeClient();
+  if (!_ready) _ready = ensureSchema(_client);
+  await _ready;
+  return _client;
+}
