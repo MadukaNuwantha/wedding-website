@@ -16,14 +16,26 @@ function makeClient(): Client {
 }
 
 async function ensureSchema(client: Client): Promise<void> {
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS guests (
-      id         TEXT PRIMARY KEY,
-      name       TEXT NOT NULL,
-      token      TEXT NOT NULL UNIQUE,
-      created_at INTEGER NOT NULL
-    )
-  `);
+  await client.batch(
+    [
+      `CREATE TABLE IF NOT EXISTS guests (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        token      TEXT NOT NULL UNIQUE,
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE TABLE IF NOT EXISTS rsvps (
+        id         TEXT PRIMARY KEY,
+        token      TEXT,
+        name       TEXT,
+        attending  TEXT NOT NULL,
+        party      INTEGER NOT NULL DEFAULT 0,
+        message    TEXT,
+        created_at INTEGER NOT NULL
+      )`,
+    ],
+    "write"
+  );
 }
 
 /** Get the shared client, ensuring the schema exists once per process. */

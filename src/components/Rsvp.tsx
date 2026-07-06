@@ -1,23 +1,33 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { submitRsvp, type RsvpState } from "@/lib/rsvp-actions";
 import Divider from "./Divider";
 import Reveal from "./Reveal";
+import RsvpSuccess from "./RsvpSuccess";
 
 const inputBase =
   "w-full rounded-xl border border-line bg-cream/60 px-4 py-3 font-serif text-base text-ink outline-none transition-colors placeholder:text-silver-deep/60 focus:border-navy focus:bg-white focus:ring-2 focus:ring-navy/12";
 const labelBase =
   "mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.16em] text-navy-600";
 
-export default function Rsvp({ guestName }: { guestName?: string }) {
+export default function Rsvp({
+  guestName,
+  guestCode,
+}: {
+  guestName?: string;
+  guestCode?: string;
+}) {
   const [attending, setAttending] = useState<"yes" | "no" | "">("");
   const [submitted, setSubmitted] = useState(false);
+  const [state, formAction, pending] = useActionState<RsvpState, FormData>(
+    submitRsvp,
+    undefined
+  );
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // UI only for now — submission to Google Sheets is the next phase.
-    setSubmitted(true);
-  }
+  useEffect(() => {
+    if (state?.ok) setSubmitted(true);
+  }, [state]);
 
   return (
     <section id="rsvp" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
@@ -40,27 +50,18 @@ export default function Rsvp({ guestName }: { guestName?: string }) {
         <Reveal>
           <div className="card mt-12 rounded-3xl p-6 sm:p-10">
             {submitted ? (
-              <div className="py-8 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy text-ivory">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-7 w-7">
-                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <h3 className="mt-5 font-serif text-3xl text-navy">Thank you!</h3>
-                <p className="mt-2 font-serif text-ink/70">
-                  This is a preview of the form. Online submissions will be
-                  enabled shortly &mdash; do check back soon.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSubmitted(false)}
-                  className="mt-6 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-navy underline underline-offset-4 hover:text-navy-600"
-                >
-                  Back to form
-                </button>
-              </div>
+              <RsvpSuccess
+                attending={
+                  state?.attending ?? (attending === "no" ? "no" : "yes")
+                }
+                guestName={guestName}
+                onReset={() => setSubmitted(false)}
+              />
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              <form action={formAction} className="space-y-5">
+                {guestCode && (
+                  <input type="hidden" name="token" value={guestCode} />
+                )}
                 <fieldset>
                   <span className={labelBase}>Will you attend?</span>
                   <div className="grid grid-cols-2 gap-3">
@@ -126,11 +127,21 @@ export default function Rsvp({ guestName }: { guestName?: string }) {
                   />
                 </div>
 
+                {state?.error && (
+                  <p
+                    role="alert"
+                    className="text-center font-sans text-sm text-red-700"
+                  >
+                    {state.error}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full rounded-full bg-navy px-8 py-3.5 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-ivory shadow-lg shadow-navy/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  disabled={pending}
+                  className="w-full rounded-full bg-navy px-8 py-3.5 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-ivory shadow-lg shadow-navy/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-navy-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
-                  Confirm Attendance
+                  {pending ? "Sending…" : "Confirm Attendance"}
                 </button>
 
                 <p className="text-center font-sans text-[0.68rem] uppercase tracking-[0.16em] text-silver-deep">

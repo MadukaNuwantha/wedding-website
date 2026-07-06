@@ -32,6 +32,12 @@ function makeToken(): string {
   return out;
 }
 
+export async function countGuests(): Promise<number> {
+  const client = await db();
+  const rs = await client.execute("SELECT COUNT(*) AS n FROM guests");
+  return Number(rs.rows[0]?.n ?? 0);
+}
+
 export async function listGuests(): Promise<Guest[]> {
   const client = await db();
   const rs = await client.execute(

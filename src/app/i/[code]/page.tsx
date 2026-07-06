@@ -10,5 +10,7 @@ export default async function InvitePage({
 }) {
   const { code } = await params;
   const guest = await getGuestByToken(code);
-  return <SiteContent guestName={guest?.name} />;
+  return (
+    <SiteContent guestName={guest?.name} guestCode={guest?.token} />
+  );
 }

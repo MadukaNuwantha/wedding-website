@@ -12,7 +12,13 @@ import Cover from "@/components/Cover";
  * The full wedding site. `guestName` is passed on personal invite links
  * (/i/[code]) so the RSVP section can greet the guest by name.
  */
-export default function SiteContent({ guestName }: { guestName?: string }) {
+export default function SiteContent({
+  guestName,
+  guestCode,
+}: {
+  guestName?: string;
+  guestCode?: string;
+}) {
   return (
     <>
       <main className="flex-1">
@@ -25,7 +31,7 @@ export default function SiteContent({ guestName }: { guestName?: string }) {
         <SectionDivider />
         <Schedule />
         <SectionDivider />
-        <Rsvp guestName={guestName} />
+        <Rsvp guestName={guestName} guestCode={guestCode} />
       </main>
       <Footer />
       <Cover />
