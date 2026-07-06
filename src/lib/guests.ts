@@ -125,3 +125,26 @@ export async function updateGuestTitle(
     args: [title, id],
   });
 }
+
+export async function deleteGuests(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const client = await db();
+  const placeholders = ids.map(() => "?").join(",");
+  await client.execute({
+    sql: `DELETE FROM guests WHERE id IN (${placeholders})`,
+    args: ids,
+  });
+}
+
+export async function setGuestsTitle(
+  ids: string[],
+  title: string | null
+): Promise<void> {
+  if (ids.length === 0) return;
+  const client = await db();
+  const placeholders = ids.map(() => "?").join(",");
+  await client.execute({
+    sql: `UPDATE guests SET title = ? WHERE id IN (${placeholders})`,
+    args: [title, ...ids],
+  });
+}

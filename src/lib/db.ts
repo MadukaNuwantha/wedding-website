@@ -34,6 +34,10 @@ async function ensureSchema(client: Client): Promise<void> {
         message    TEXT,
         created_at INTEGER NOT NULL
       )`,
+      `CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      )`,
     ],
     "write"
   );

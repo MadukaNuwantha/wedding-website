@@ -1,10 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   addGuestAction,
   deleteGuestAction,
   importGuestsAction,
+  updateGuestTitleAction,
+  bulkDeleteGuestsAction,
+  bulkSetTitleAction,
   type AddGuestState,
   type ImportGuestsState,
 } from "@/lib/guest-actions";
@@ -12,6 +21,11 @@ import type { Guest } from "@/lib/guests";
 
 const inputBase =
   "w-full rounded-xl border border-line bg-white px-4 py-3 font-sans text-base text-ink outline-none transition-colors placeholder:text-silver-deep/60 focus:border-navy focus:ring-2 focus:ring-navy/12";
+
+const TITLES = ["", "Mr.", "Mrs.", "Ms.", "Miss", "Dr.", "Rev.", "Mr. & Mrs."];
+
+const titleSelectClass =
+  "shrink-0 rounded-lg border border-line bg-white px-2.5 py-1.5 font-sans text-sm text-ink outline-none focus:border-navy";
 
 function inviteUrl(origin: string, token: string): string {
   return `${origin}/i/${token}`;
@@ -24,7 +38,6 @@ function CopyButton({ url }: { url: string }) {
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      // Fallback for older browsers / insecure contexts.
       const ta = document.createElement("textarea");
       ta.value = url;
       document.body.appendChild(ta);
@@ -61,6 +74,13 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
   const [origin, setOrigin] = useState("");
   const [query, setQuery] = useState("");
 
+  const [titles, setTitles] = useState<Record<string, string>>(() =>
+    Object.fromEntries(guests.map((g) => [g.id, g.title ?? ""]))
+  );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkTitle, setBulkTitle] = useState("");
+  const [isPending, startTransition] = useTransition();
+
   const q = query.trim().toLowerCase();
   const filtered = q
     ? guests.filter(
@@ -72,15 +92,71 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
 
   useEffect(() => setOrigin(window.location.origin), []);
 
-  // Clear the input after a successful add.
   useEffect(() => {
     if (state?.ok) formRef.current?.reset();
   }, [state]);
 
-  // Clear the file picker after a successful import.
   useEffect(() => {
     if (importState?.added) importRef.current?.reset();
   }, [importState]);
+
+  const effTitle = (g: Guest) => titles[g.id] ?? g.title ?? "";
+
+  function setTitle(id: string, value: string) {
+    setTitles((prev) => ({ ...prev, [id]: value }));
+    startTransition(async () => {
+      await updateGuestTitleAction(id, value);
+    });
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((g) => selected.has(g.id));
+
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filtered.forEach((g) => next.delete(g.id));
+      else filtered.forEach((g) => next.add(g.id));
+      return next;
+    });
+  }
+
+  function applyBulkTitle() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setTitles((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => (next[id] = bulkTitle));
+      return next;
+    });
+    startTransition(async () => {
+      await bulkSetTitleAction(ids, bulkTitle);
+    });
+  }
+
+  function deleteSelected() {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (
+      !window.confirm(
+        `Delete ${ids.length} guest${ids.length === 1 ? "" : "s"}? This can't be undone.`
+      )
+    )
+      return;
+    setSelected(new Set());
+    startTransition(async () => {
+      await bulkDeleteGuestsAction(ids);
+    });
+  }
 
   return (
     <div className="space-y-8">
@@ -160,10 +236,8 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
 
       {/* Guest list */}
       <div>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-serif text-xl font-light text-navy">
-            Guests
-          </h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="font-serif text-xl font-light text-navy">Guests</h2>
           <span className="font-sans text-sm text-ink/50">
             {q ? `${filtered.length} of ${guests.length}` : guests.length}{" "}
             {guests.length === 1 ? "guest" : "guests"}
@@ -193,6 +267,65 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
           </div>
         )}
 
+        {/* Select-all + bulk actions */}
+        {filtered.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <label className="flex items-center gap-2 font-sans text-sm text-ink/60">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 accent-navy"
+              />
+              Select all{q ? " (filtered)" : ""}
+            </label>
+
+            {selected.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl bg-tint px-3 py-2">
+                <span className="font-sans text-sm font-semibold text-navy">
+                  {selected.size} selected
+                </span>
+                <span className="h-4 w-px bg-silver-light" />
+                <select
+                  value={bulkTitle}
+                  onChange={(e) => setBulkTitle(e.target.value)}
+                  aria-label="Title to apply"
+                  className={titleSelectClass}
+                >
+                  {TITLES.map((t) => (
+                    <option key={t || "none"} value={t}>
+                      {t || "— no title —"}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={applyBulkTitle}
+                  disabled={isPending}
+                  className="rounded-full bg-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-ivory transition-colors hover:bg-navy-600 disabled:opacity-50"
+                >
+                  Apply title
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteSelected}
+                  disabled={isPending}
+                  className="rounded-full border border-red-300 px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-red-600 transition-colors hover:bg-red-600 hover:text-white disabled:opacity-50"
+                >
+                  Delete selected
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="font-sans text-xs font-semibold uppercase tracking-[0.12em] text-ink/45 underline underline-offset-4 hover:text-navy"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {guests.length === 0 ? (
           <p className="card rounded-2xl p-8 text-center font-sans text-sm text-ink/50">
             No guests yet. Add your first guest above.
@@ -208,9 +341,28 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
               return (
                 <li
                   key={g.id}
-                  className="card flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                  className="card flex flex-col gap-3 rounded-2xl p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5"
                 >
-                  <div className="min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(g.id)}
+                    onChange={() => toggleSelect(g.id)}
+                    aria-label={`Select ${g.name}`}
+                    className="h-4 w-4 shrink-0 accent-navy"
+                  />
+                  <select
+                    value={effTitle(g)}
+                    onChange={(e) => setTitle(g.id, e.target.value)}
+                    aria-label={`Title for ${g.name}`}
+                    className={titleSelectClass}
+                  >
+                    {TITLES.map((t) => (
+                      <option key={t || "none"} value={t}>
+                        {t || "— title —"}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-serif text-lg text-navy">
                       {g.name}
                     </p>

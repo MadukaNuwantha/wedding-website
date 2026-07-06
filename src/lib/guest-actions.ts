@@ -6,6 +6,8 @@ import {
   addGuest,
   addGuests,
   deleteGuest,
+  deleteGuests,
+  setGuestsTitle,
   updateGuestTitle,
 } from "@/lib/guests";
 
@@ -87,4 +89,30 @@ export async function updateGuestTitleAction(
   await updateGuestTitle(id, clean || null);
   revalidatePath("/dashboard/invitations");
   revalidatePath("/dashboard/custom-url");
+}
+
+export async function bulkDeleteGuestsAction(ids: string[]): Promise<void> {
+  if (!(await getSession())) return;
+
+  const clean = (ids ?? []).filter(Boolean).slice(0, 2000);
+  if (clean.length === 0) return;
+
+  await deleteGuests(clean);
+  revalidatePath("/dashboard/custom-url");
+  revalidatePath("/dashboard");
+}
+
+export async function bulkSetTitleAction(
+  ids: string[],
+  title: string
+): Promise<void> {
+  if (!(await getSession())) return;
+
+  const clean = (ids ?? []).filter(Boolean).slice(0, 2000);
+  if (clean.length === 0) return;
+
+  const t = title.trim().slice(0, 40);
+  await setGuestsTitle(clean, t || null);
+  revalidatePath("/dashboard/custom-url");
+  revalidatePath("/dashboard/invitations");
 }

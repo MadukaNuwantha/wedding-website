@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   CARDS,
   cardMeta,
@@ -8,21 +8,14 @@ import {
   type CardFont,
   type CardKey,
 } from "@/lib/card-config";
-import { updateGuestTitleAction } from "@/lib/guest-actions";
+import {
+  saveTemplatesAction,
+  type SaveTemplatesState,
+} from "@/lib/settings-actions";
+import type { Templates } from "@/lib/settings";
 import type { Guest } from "@/lib/guests";
 
 const STORAGE_KEY = "wp_card_cfg_v1";
-
-const TITLES = [
-  "",
-  "Mr.",
-  "Mrs.",
-  "Ms.",
-  "Miss",
-  "Dr.",
-  "Rev.",
-  "Mr. & Mrs.",
-];
 
 // Cache decoded base images so re-renders don't refetch.
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
@@ -171,17 +164,40 @@ function Slider({
   );
 }
 
-export default function InvitationStudio({ guests }: { guests: Guest[] }) {
+const SEND_BTN =
+  "rounded-full bg-[#128C7E] px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#0f7a6c] disabled:opacity-50";
+const SEND_BTN_ALT =
+  "rounded-full bg-amber-500 px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-amber-600 disabled:opacity-50";
+const DL_BTN =
+  "rounded-full border border-navy px-3.5 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy transition-colors hover:bg-navy hover:text-ivory disabled:opacity-50";
+
+function WaIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.8c2.16 0 4.19.84 5.72 2.37a8.06 8.06 0 0 1 2.37 5.74c0 4.47-3.64 8.11-8.11 8.11a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.12.82.83-3.04-.19-.31a8.05 8.05 0 0 1-1.24-4.29c0-4.47 3.64-8.11 8.11-8.11Zm4.47 10.15c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.03-.38-1.96-1.21-.72-.64-1.21-1.44-1.35-1.68-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.32-.75-1.81-.2-.47-.4-.41-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.57.18 1.1.16 1.51.1.46-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28Z" />
+    </svg>
+  );
+}
+
+export default function InvitationStudio({
+  guests,
+  templates,
+}: {
+  guests: Guest[];
+  templates: Templates;
+}) {
   const [draft, setDraft] = useState<Record<CardKey, CardConfig>>(defaults);
   const [locked, setLocked] = useState<Record<CardKey, CardConfig>>(defaults);
   const [active, setActive] = useState<CardKey>("wedding");
   const [sample, setSample] = useState(guests[0]?.name ?? "Guest Name");
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [titles, setTitles] = useState<Record<string, string>>(() =>
-    Object.fromEntries(guests.map((g) => [g.id, g.title ?? ""]))
-  );
-  const [, startTransition] = useTransition();
+  const [tpl, setTpl] = useState<Templates>(templates);
+  const [saveState, saveAction, saving] = useActionState<
+    SaveTemplatesState,
+    FormData
+  >(saveTemplatesAction, undefined);
+  const [bothStep, setBothStep] = useState<Record<string, number>>({});
   const previewRef = useRef<HTMLCanvasElement>(null);
 
   // Load the locked placement from the browser.
@@ -239,15 +255,8 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
     : guests;
 
   function displayName(g: Guest): string {
-    const t = (titles[g.id] ?? "").trim();
+    const t = (g.title ?? "").trim();
     return t ? `${t} ${g.name}` : g.name;
-  }
-
-  function setTitle(id: string, value: string) {
-    setTitles((prev) => ({ ...prev, [id]: value }));
-    startTransition(async () => {
-      await updateGuestTitleAction(id, value);
-    });
   }
 
   async function handleDownload(key: CardKey, g: Guest) {
@@ -259,12 +268,85 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
     }
   }
 
-  async function handleBoth(g: Guest) {
-    setBusy(`${g.id}:both`);
+  function buildMessage(key: CardKey, g: Guest): string {
+    return (tpl[key] ?? "").split("<name>").join(displayName(g));
+  }
+
+  async function renderBlob(key: CardKey, name: string): Promise<Blob | null> {
+    const canvas = document.createElement("canvas");
+    await renderCard(canvas, key, name, locked[key]);
+    return await new Promise((res) => canvas.toBlob(res, "image/png"));
+  }
+
+  // Share one card (image + text) to WhatsApp via the native share sheet.
+  // Falls back to downloading the image + copying the text on unsupported
+  // devices (e.g. desktop). Returns true if the share/fallback completed.
+  async function shareOne(key: CardKey, g: Guest): Promise<boolean> {
+    const name = displayName(g);
+    const blob = await renderBlob(key, name);
+    if (!blob) return false;
+
+    const file = new File(
+      [blob],
+      `${slug(name)}-${cardMeta(key).fileSuffix}.png`,
+      { type: "image/png" }
+    );
+    const text = buildMessage(key, g);
+    const data: ShareData = { files: [file], text };
+
+    if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
+      try {
+        await navigator.share(data);
+        return true;
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return false;
+        // otherwise fall through to the fallback
+      }
+    }
+
+    // Fallback: download the image and copy the text.
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
     try {
-      await downloadCard("wedding", displayName(g), locked.wedding);
-      await new Promise((r) => setTimeout(r, 400));
-      await downloadCard("reception", displayName(g), locked.reception);
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* ignore */
+    }
+    alert(
+      "This device can't share straight to WhatsApp.\n\nThe card image was downloaded and the message text copied — open WhatsApp, attach the image and paste the text.\n\nTip: open this dashboard on your phone to send directly."
+    );
+    return true;
+  }
+
+  async function handleSend(key: CardKey, g: Guest) {
+    setBusy(`${g.id}:send-${key}`);
+    try {
+      await shareOne(key, g);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // "Both" sends two separate messages. WhatsApp/browsers require a fresh
+  // user tap per share, so this is a two-step: tap once for the wedding,
+  // then again for the reception.
+  async function handleSendBoth(g: Guest) {
+    const step = bothStep[g.id] ?? 0;
+    setBusy(`${g.id}:send-both`);
+    try {
+      if (step === 0) {
+        const ok = await shareOne("wedding", g);
+        if (ok) setBothStep((p) => ({ ...p, [g.id]: 1 }));
+      } else {
+        const ok = await shareOne("reception", g);
+        if (ok) setBothStep((p) => ({ ...p, [g.id]: 0 }));
+      }
     } finally {
       setBusy(null);
     }
@@ -418,16 +500,83 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
         </div>
       </div>
 
+      {/* Message templates */}
+      <div className="card rounded-2xl p-5">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-serif text-xl font-light text-navy">
+            Message templates
+          </h2>
+          <span className="font-sans text-xs text-ink/45">
+            Use{" "}
+            <code className="rounded bg-tint px-1 py-0.5 font-mono text-[0.72rem] text-navy">
+              &lt;name&gt;
+            </code>{" "}
+            where the guest&apos;s name should appear
+          </span>
+        </div>
+        <form action={saveAction} className="grid gap-4 md:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
+              Wedding
+            </span>
+            <textarea
+              name="wedding"
+              rows={8}
+              value={tpl.wedding}
+              onChange={(e) =>
+                setTpl((p) => ({ ...p, wedding: e.target.value }))
+              }
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 font-sans text-sm leading-relaxed text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
+              Reception
+            </span>
+            <textarea
+              name="reception"
+              rows={8}
+              value={tpl.reception}
+              onChange={(e) =>
+                setTpl((p) => ({ ...p, reception: e.target.value }))
+              }
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 font-sans text-sm leading-relaxed text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
+            />
+          </label>
+          <div className="flex items-center gap-3 md:col-span-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full bg-navy px-7 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ivory transition-colors hover:bg-navy-600 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save templates"}
+            </button>
+            {saveState?.ok && (
+              <span className="font-sans text-sm text-green-700">Saved ✓</span>
+            )}
+            {saveState?.error && (
+              <span className="font-sans text-sm text-red-700">
+                {saveState.error}
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
       {/* Guest list */}
       <div>
-        <div className="mb-3 flex items-baseline justify-between">
+        <div className="mb-1 flex items-baseline justify-between">
           <h2 className="font-serif text-xl font-light text-navy">
-            Download per guest
+            Send &amp; download
           </h2>
           <span className="font-sans text-sm text-ink/50">
             {guests.length} {guests.length === 1 ? "guest" : "guests"}
           </span>
         </div>
+        <p className="mb-3 font-sans text-xs text-ink/45">
+          Sending opens WhatsApp with the card + message — works best from your
+          phone.
+        </p>
 
         {anyDirty && (
           <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 font-sans text-sm text-amber-800">
@@ -457,48 +606,68 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
                   key={g.id}
                   className="card flex flex-col gap-3 rounded-2xl p-4"
                 >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <select
-                      value={titles[g.id] ?? ""}
-                      onChange={(e) => setTitle(g.id, e.target.value)}
-                      aria-label={`Title for ${g.name}`}
-                      className="shrink-0 rounded-lg border border-line bg-white px-2.5 py-1.5 font-sans text-sm text-ink outline-none focus:border-navy"
-                    >
-                      {TITLES.map((t) => (
-                        <option key={t || "none"} value={t}>
-                          {t || "— title —"}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="min-w-0 flex-1 truncate font-serif text-lg text-navy">
-                      {displayName(g)}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDownload("wedding", g)}
-                      disabled={busy !== null}
-                      className="rounded-full border border-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy transition-colors hover:bg-navy hover:text-ivory disabled:opacity-50"
-                    >
-                      {busy === `${g.id}:wedding` ? "…" : "Wedding"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDownload("reception", g)}
-                      disabled={busy !== null}
-                      className="rounded-full border border-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy transition-colors hover:bg-navy hover:text-ivory disabled:opacity-50"
-                    >
-                      {busy === `${g.id}:reception` ? "…" : "Reception"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleBoth(g)}
-                      disabled={busy !== null}
-                      className="rounded-full bg-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-ivory transition-colors hover:bg-navy-600 disabled:opacity-50"
-                    >
-                      {busy === `${g.id}:both` ? "…" : "Both"}
-                    </button>
+                  <p className="truncate font-serif text-lg text-navy">
+                    {displayName(g)}
+                  </p>
+                  <div className="flex flex-col gap-2.5 border-t border-line pt-3">
+                    {/* Send via WhatsApp */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="mr-0.5 inline-flex items-center gap-1 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-green-700">
+                        <WaIcon /> Send
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSend("wedding", g)}
+                        disabled={busy !== null}
+                        className={SEND_BTN}
+                      >
+                        {busy === `${g.id}:send-wedding` ? "…" : "Wedding"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSend("reception", g)}
+                        disabled={busy !== null}
+                        className={SEND_BTN}
+                      >
+                        {busy === `${g.id}:send-reception` ? "…" : "Reception"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSendBoth(g)}
+                        disabled={busy !== null}
+                        className={
+                          (bothStep[g.id] ?? 0) === 1 ? SEND_BTN_ALT : SEND_BTN
+                        }
+                      >
+                        {busy === `${g.id}:send-both`
+                          ? "…"
+                          : (bothStep[g.id] ?? 0) === 1
+                          ? "Now: Reception (2/2)"
+                          : "Both"}
+                      </button>
+                    </div>
+                    {/* Download */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="mr-0.5 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-ink/40">
+                        Download
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDownload("wedding", g)}
+                        disabled={busy !== null}
+                        className={DL_BTN}
+                      >
+                        {busy === `${g.id}:wedding` ? "…" : "Wedding"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownload("reception", g)}
+                        disabled={busy !== null}
+                        className={DL_BTN}
+                      >
+                        {busy === `${g.id}:reception` ? "…" : "Reception"}
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}

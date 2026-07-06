@@ -1,8 +1,12 @@
 import { listGuests } from "@/lib/guests";
+import { getTemplates } from "@/lib/settings";
 import InvitationStudio from "./invitation-studio";
 
 export default async function InvitationsPage() {
-  const guests = await listGuests();
+  const [guests, templates] = await Promise.all([
+    listGuests(),
+    getTemplates(),
+  ]);
 
   return (
     <div>
@@ -18,7 +22,7 @@ export default async function InvitationsPage() {
         </p>
       </header>
 
-      <InvitationStudio guests={guests} />
+      <InvitationStudio guests={guests} templates={templates} />
     </div>
   );
 }
