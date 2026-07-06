@@ -271,9 +271,11 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,380px)_1fr]">
-      {/* Configurator */}
-      <div className="space-y-4">
+    <div className="space-y-8">
+      {/* Tooling: preview + controls side by side */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,400px)_1fr]">
+        {/* Preview */}
+        <div className="space-y-4">
         <div className="flex gap-2">
           {CARDS.map((c) => (
             <button
@@ -298,7 +300,9 @@ export default function InvitationStudio({ guests }: { guests: Guest[] }) {
             aria-label={`${active} card preview`}
           />
         </div>
+        </div>
 
+        {/* Controls */}
         <div className="card space-y-4 rounded-2xl p-5">
           <label className="block">
             <span className="font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
