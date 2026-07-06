@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { cardMeta, type CardConfig, type CardKey } from "./card-config";
 
-export type Templates = { wedding: string; reception: string };
+export type Templates = { wedding: string; reception: string; rsvp: string };
 export type CardConfigs = Record<CardKey, CardConfig>;
 
 export const DEFAULT_TEMPLATES: Templates = {
@@ -21,6 +21,14 @@ We would be honoured to have you join us for our wedding Reception.
 📍 Moon Light Hotel, Marawila
 
 We can't wait to celebrate with you! 💙`,
+  rsvp: `Dear <name>,
+
+You're warmly invited to Maduka & Marine's wedding! 💙
+
+Please open your personal invitation and let us know if you'll be joining us:
+<link>
+
+We can't wait to celebrate with you!`,
 };
 
 export async function getSetting(key: string): Promise<string | null> {
@@ -41,13 +49,15 @@ export async function setSetting(key: string, value: string): Promise<void> {
 }
 
 export async function getTemplates(): Promise<Templates> {
-  const [wedding, reception] = await Promise.all([
+  const [wedding, reception, rsvp] = await Promise.all([
     getSetting("template_wedding"),
     getSetting("template_reception"),
+    getSetting("template_rsvp"),
   ]);
   return {
     wedding: wedding ?? DEFAULT_TEMPLATES.wedding,
     reception: reception ?? DEFAULT_TEMPLATES.reception,
+    rsvp: rsvp ?? DEFAULT_TEMPLATES.rsvp,
   };
 }
 

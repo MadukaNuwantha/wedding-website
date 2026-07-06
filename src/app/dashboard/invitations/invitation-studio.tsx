@@ -168,8 +168,6 @@ function Slider({
 
 const SEND_BTN =
   "rounded-full bg-[#128C7E] px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#0f7a6c] disabled:opacity-50";
-const SEND_BTN_ALT =
-  "rounded-full bg-amber-500 px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-amber-600 disabled:opacity-50";
 const DL_BTN =
   "rounded-full border border-navy px-3.5 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy transition-colors hover:bg-navy hover:text-ivory disabled:opacity-50";
 
@@ -202,9 +200,11 @@ export default function InvitationStudio({
     SaveTemplatesState,
     FormData
   >(saveTemplatesAction, undefined);
-  const [bothStep, setBothStep] = useState<Record<string, number>>({});
   const [savingPlacement, startPlacementSave] = useTransition();
+  const [origin, setOrigin] = useState("");
   const previewRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => setOrigin(window.location.origin), []);
 
   // Live preview follows the draft (what you're editing).
   useEffect(() => {
@@ -320,23 +320,23 @@ export default function InvitationStudio({
     }
   }
 
-  // "Both" sends two separate messages. WhatsApp/browsers require a fresh
-  // user tap per share, so this is a two-step: tap once for the wedding,
-  // then again for the reception.
-  async function handleSendBoth(g: Guest) {
-    const step = bothStep[g.id] ?? 0;
-    setBusy(`${g.id}:send-both`);
-    try {
-      if (step === 0) {
-        const ok = await shareOne("wedding", g);
-        if (ok) setBothStep((p) => ({ ...p, [g.id]: 1 }));
-      } else {
-        const ok = await shareOne("reception", g);
-        if (ok) setBothStep((p) => ({ ...p, [g.id]: 0 }));
-      }
-    } finally {
-      setBusy(null);
-    }
+  // RSVP is a plain text message with the guest's personal invite link.
+  function buildRsvpMessage(g: Guest): string {
+    const link = `${origin}/i/${g.token}`;
+    return (tpl.rsvp ?? "")
+      .split("<name>")
+      .join(displayName(g))
+      .split("<link>")
+      .join(link);
+  }
+
+  function handleSendRsvp(g: Guest) {
+    const msg = buildRsvpMessage(g);
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(msg)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   }
 
   return (
@@ -502,7 +502,11 @@ export default function InvitationStudio({
             <code className="rounded bg-tint px-1 py-0.5 font-mono text-[0.72rem] text-navy">
               &lt;name&gt;
             </code>{" "}
-            where the guest&apos;s name should appear
+            for the guest&apos;s name, and{" "}
+            <code className="rounded bg-tint px-1 py-0.5 font-mono text-[0.72rem] text-navy">
+              &lt;link&gt;
+            </code>{" "}
+            (RSVP) for their invite link
           </span>
         </div>
         <form action={saveAction} className="grid gap-4 md:grid-cols-2">
@@ -531,6 +535,21 @@ export default function InvitationStudio({
               onChange={(e) =>
                 setTpl((p) => ({ ...p, reception: e.target.value }))
               }
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 font-sans text-sm leading-relaxed text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
+            />
+          </label>
+          <label className="block md:col-span-2">
+            <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
+              RSVP link message{" "}
+              <span className="font-normal normal-case tracking-normal text-ink/45">
+                (text only — include &lt;link&gt;)
+              </span>
+            </span>
+            <textarea
+              name="rsvp"
+              rows={6}
+              value={tpl.rsvp}
+              onChange={(e) => setTpl((p) => ({ ...p, rsvp: e.target.value }))}
               className="w-full rounded-xl border border-line bg-white px-3 py-2 font-sans text-sm leading-relaxed text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
             />
           </label>
@@ -565,9 +584,9 @@ export default function InvitationStudio({
           </span>
         </div>
         <p className="mb-3 font-sans text-xs text-ink/45">
-          Sending opens WhatsApp with the card + message; pick the contact and
-          send. It may look like two rows in your own app, but the recipient
-          gets one image with a caption.
+          Wedding/Reception open WhatsApp with the card + message (recipient
+          gets one image with a caption). RSVP sends a text with the guest&apos;s
+          personal invite link. Pick the contact and send.
         </p>
 
         {anyDirty && (
@@ -625,17 +644,11 @@ export default function InvitationStudio({
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleSendBoth(g)}
+                        onClick={() => handleSendRsvp(g)}
                         disabled={busy !== null}
-                        className={
-                          (bothStep[g.id] ?? 0) === 1 ? SEND_BTN_ALT : SEND_BTN
-                        }
+                        className={SEND_BTN}
                       >
-                        {busy === `${g.id}:send-both`
-                          ? "…"
-                          : (bothStep[g.id] ?? 0) === 1
-                          ? "Now: Reception (2/2)"
-                          : "Both"}
+                        RSVP
                       </button>
                     </div>
                     {/* Download */}

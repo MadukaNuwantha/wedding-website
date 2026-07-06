@@ -15,9 +15,11 @@ export async function saveTemplatesAction(
 
   const wedding = String(formData.get("wedding") ?? "").slice(0, 5000);
   const reception = String(formData.get("reception") ?? "").slice(0, 5000);
+  const rsvp = String(formData.get("rsvp") ?? "").slice(0, 5000);
 
   await setSetting("template_wedding", wedding);
   await setSetting("template_reception", reception);
+  await setSetting("template_rsvp", rsvp);
 
   revalidatePath("/dashboard/invitations");
   return { ok: true };
