@@ -1,6 +1,8 @@
 import { db } from "./db";
+import { cardMeta, type CardConfig, type CardKey } from "./card-config";
 
 export type Templates = { wedding: string; reception: string };
+export type CardConfigs = Record<CardKey, CardConfig>;
 
 export const DEFAULT_TEMPLATES: Templates = {
   wedding: `Dear <name>,
@@ -47,4 +49,27 @@ export async function getTemplates(): Promise<Templates> {
     wedding: wedding ?? DEFAULT_TEMPLATES.wedding,
     reception: reception ?? DEFAULT_TEMPLATES.reception,
   };
+}
+
+export function defaultCardConfigs(): CardConfigs {
+  return {
+    wedding: { ...cardMeta("wedding").default },
+    reception: { ...cardMeta("reception").default },
+  };
+}
+
+/** Card name placement, shared across devices (unlike the old localStorage). */
+export async function getCardConfigs(): Promise<CardConfigs> {
+  const raw = await getSetting("card_config");
+  const def = defaultCardConfigs();
+  if (!raw) return def;
+  try {
+    const saved = JSON.parse(raw) as Partial<CardConfigs>;
+    return {
+      wedding: { ...def.wedding, ...saved.wedding },
+      reception: { ...def.reception, ...saved.reception },
+    };
+  } catch {
+    return def;
+  }
 }

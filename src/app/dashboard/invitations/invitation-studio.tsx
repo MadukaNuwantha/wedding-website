@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   CARDS,
   cardMeta,
@@ -10,12 +16,11 @@ import {
 } from "@/lib/card-config";
 import {
   saveTemplatesAction,
+  saveCardConfigAction,
   type SaveTemplatesState,
 } from "@/lib/settings-actions";
-import type { Templates } from "@/lib/settings";
+import type { CardConfigs, Templates } from "@/lib/settings";
 import type { Guest } from "@/lib/guests";
-
-const STORAGE_KEY = "wp_card_cfg_v1";
 
 // Cache decoded base images so re-renders don't refetch.
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
@@ -109,11 +114,8 @@ async function downloadCard(key: CardKey, name: string, cfg: CardConfig) {
   );
 }
 
-function defaults(): Record<CardKey, CardConfig> {
-  return {
-    wedding: { ...cardMeta("wedding").default },
-    reception: { ...cardMeta("reception").default },
-  };
+function cloneConfigs(c: CardConfigs): Record<CardKey, CardConfig> {
+  return { wedding: { ...c.wedding }, reception: { ...c.reception } };
 }
 
 function sameCfg(a: CardConfig, b: CardConfig): boolean {
@@ -182,12 +184,15 @@ function WaIcon() {
 export default function InvitationStudio({
   guests,
   templates,
+  cardConfigs,
 }: {
   guests: Guest[];
   templates: Templates;
+  cardConfigs: CardConfigs;
 }) {
-  const [draft, setDraft] = useState<Record<CardKey, CardConfig>>(defaults);
-  const [locked, setLocked] = useState<Record<CardKey, CardConfig>>(defaults);
+  // Placement comes from the database, so it's the same on every device.
+  const [draft, setDraft] = useState(() => cloneConfigs(cardConfigs));
+  const [locked, setLocked] = useState(() => cloneConfigs(cardConfigs));
   const [active, setActive] = useState<CardKey>("wedding");
   const [sample, setSample] = useState(guests[0]?.name ?? "Guest Name");
   const [query, setQuery] = useState("");
@@ -198,34 +203,8 @@ export default function InvitationStudio({
     FormData
   >(saveTemplatesAction, undefined);
   const [bothStep, setBothStep] = useState<Record<string, number>>({});
+  const [savingPlacement, startPlacementSave] = useTransition();
   const previewRef = useRef<HTMLCanvasElement>(null);
-
-  // Load the locked placement from the browser.
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<Record<CardKey, CardConfig>>;
-        const merged: Record<CardKey, CardConfig> = {
-          wedding: { ...cardMeta("wedding").default, ...saved.wedding },
-          reception: { ...cardMeta("reception").default, ...saved.reception },
-        };
-        setLocked(merged);
-        setDraft(merged);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  // Persist the locked placement whenever it changes.
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(locked));
-    } catch {
-      /* ignore */
-    }
-  }, [locked]);
 
   // Live preview follows the draft (what you're editing).
   useEffect(() => {
@@ -244,8 +223,13 @@ export default function InvitationStudio({
     (k) => !sameCfg(draft[k], locked[k])
   );
 
-  const lockActive = () =>
-    setLocked((prev) => ({ ...prev, [active]: draft[active] }));
+  const lockActive = () => {
+    const next = { ...locked, [active]: draft[active] };
+    setLocked(next);
+    startPlacementSave(async () => {
+      await saveCardConfigAction(next);
+    });
+  };
   const revertActive = () =>
     setDraft((prev) => ({ ...prev, [active]: locked[active] }));
 
@@ -275,7 +259,8 @@ export default function InvitationStudio({
   async function renderBlob(key: CardKey, name: string): Promise<Blob | null> {
     const canvas = document.createElement("canvas");
     await renderCard(canvas, key, name, locked[key]);
-    return await new Promise((res) => canvas.toBlob(res, "image/png"));
+    // JPEG so WhatsApp treats it as a photo (with caption), not a document.
+    return await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.92));
   }
 
   // Share one card (image + text) to WhatsApp via the native share sheet.
@@ -288,10 +273,12 @@ export default function InvitationStudio({
 
     const file = new File(
       [blob],
-      `${slug(name)}-${cardMeta(key).fileSuffix}.png`,
-      { type: "image/png" }
+      `${slug(name)}-${cardMeta(key).fileSuffix}.jpg`,
+      { type: "image/jpeg" }
     );
     const text = buildMessage(key, g);
+    // Share the image + text together. The sender's own app may show them as
+    // two rows, but the recipient receives it as one image with a caption.
     const data: ShareData = { files: [file], text };
 
     if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
@@ -319,7 +306,7 @@ export default function InvitationStudio({
       /* ignore */
     }
     alert(
-      "This device can't share straight to WhatsApp.\n\nThe card image was downloaded and the message text copied — open WhatsApp, attach the image and paste the text.\n\nTip: open this dashboard on your phone to send directly."
+      "Couldn't open the share sheet.\n\nThe card image was downloaded and the message copied — open WhatsApp, attach the image and paste the text."
     );
     return true;
   }
@@ -464,7 +451,11 @@ export default function InvitationStudio({
                     : "bg-green-50 text-green-700"
                 }`}
               >
-                {dirty ? "Unsaved changes" : "Placement locked ✓"}
+                {savingPlacement
+                  ? "Saving…"
+                  : dirty
+                  ? "Unsaved changes"
+                  : "Placement locked ✓"}
               </span>
               {dirty && (
                 <button
@@ -479,10 +470,10 @@ export default function InvitationStudio({
             <button
               type="button"
               onClick={lockActive}
-              disabled={!dirty}
+              disabled={!dirty || savingPlacement}
               className="mt-3 w-full rounded-full bg-navy px-6 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-ivory transition-colors hover:bg-navy-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Lock {active} placement
+              Lock {active} placement (all devices)
             </button>
             <button
               type="button"
@@ -574,8 +565,9 @@ export default function InvitationStudio({
           </span>
         </div>
         <p className="mb-3 font-sans text-xs text-ink/45">
-          Sending opens WhatsApp with the card + message — works best from your
-          phone.
+          Sending opens WhatsApp with the card + message; pick the contact and
+          send. It may look like two rows in your own app, but the recipient
+          gets one image with a caption.
         </p>
 
         {anyDirty && (
