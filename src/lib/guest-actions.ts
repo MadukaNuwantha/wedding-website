@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
-import { addGuest, addGuests, deleteGuest } from "@/lib/guests";
+import {
+  addGuest,
+  addGuests,
+  deleteGuest,
+  updateGuestTitle,
+} from "@/lib/guests";
 
 export type AddGuestState = { error?: string; ok?: boolean } | undefined;
 
@@ -69,4 +74,17 @@ export async function deleteGuestAction(formData: FormData): Promise<void> {
     await deleteGuest(id);
     revalidatePath("/dashboard");
   }
+}
+
+export async function updateGuestTitleAction(
+  id: string,
+  title: string
+): Promise<void> {
+  if (!(await getSession())) return;
+  if (!id) return;
+
+  const clean = title.trim().slice(0, 40);
+  await updateGuestTitle(id, clean || null);
+  revalidatePath("/dashboard/invitations");
+  revalidatePath("/dashboard/custom-url");
 }

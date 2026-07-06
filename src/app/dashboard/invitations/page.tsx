@@ -1,4 +1,9 @@
-export default function InvitationsPage() {
+import { listGuests } from "@/lib/guests";
+import InvitationStudio from "./invitation-studio";
+
+export default async function InvitationsPage() {
+  const guests = await listGuests();
+
   return (
     <div>
       <header className="mb-8 border-b border-line pb-6">
@@ -7,23 +12,13 @@ export default function InvitationsPage() {
           Invitation Create
         </h1>
         <p className="mt-2 font-sans text-sm text-ink/60">
-          Generate each guest&apos;s wedding &amp; reception invitation cards
-          with their name, ready to download and send.
+          Each guest&apos;s name is placed on the card&apos;s dotted line.
+          Fine-tune the placement once (saved in this browser), then download
+          the wedding &amp; reception cards per guest.
         </p>
       </header>
 
-      <div className="card rounded-2xl p-10 text-center sm:p-14">
-        <span className="inline-block rounded-full bg-tint px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-silver-deep">
-          Coming soon
-        </span>
-        <h2 className="mt-5 font-serif text-2xl font-light text-navy">
-          Personalised invitation cards
-        </h2>
-        <p className="mx-auto mt-3 max-w-md font-sans text-sm text-ink/55">
-          This will take the two base card images and render each guest&apos;s
-          name onto them, with a download for every guest.
-        </p>
-      </div>
+      <InvitationStudio guests={guests} />
     </div>
   );
 }

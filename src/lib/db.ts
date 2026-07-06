@@ -21,6 +21,7 @@ async function ensureSchema(client: Client): Promise<void> {
       `CREATE TABLE IF NOT EXISTS guests (
         id         TEXT PRIMARY KEY,
         name       TEXT NOT NULL,
+        title      TEXT,
         token      TEXT NOT NULL UNIQUE,
         created_at INTEGER NOT NULL
       )`,
@@ -36,6 +37,13 @@ async function ensureSchema(client: Client): Promise<void> {
     ],
     "write"
   );
+
+  // Migration for databases created before the title column existed.
+  try {
+    await client.execute("ALTER TABLE guests ADD COLUMN title TEXT");
+  } catch {
+    /* column already exists */
+  }
 }
 
 /** Get the shared client, ensuring the schema exists once per process. */

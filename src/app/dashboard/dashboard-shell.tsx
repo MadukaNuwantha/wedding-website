@@ -48,7 +48,6 @@ const NAV: NavItem[] = [
   {
     href: "/dashboard/invitations",
     label: "Invitation Create",
-    soon: true,
     icon: (
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />

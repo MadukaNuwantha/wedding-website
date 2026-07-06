@@ -33,10 +33,10 @@ export default async function DashboardOverview() {
     },
     {
       label: "Invitation Cards",
-      value: "Soon",
-      hint: "Personalised card downloads — coming soon",
+      value: guestCount,
+      hint: "Download each guest's personalised cards",
       href: "/dashboard/invitations",
-      cta: "Preview",
+      cta: "Create cards",
     },
   ];
 

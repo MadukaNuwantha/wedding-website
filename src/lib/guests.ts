@@ -5,6 +5,7 @@ import { db } from "./db";
 export type Guest = {
   id: string;
   name: string;
+  title: string | null;
   token: string;
   createdAt: number;
 };
@@ -13,6 +14,7 @@ function rowToGuest(r: Row): Guest {
   return {
     id: String(r.id),
     name: String(r.name),
+    title: r.title === null || r.title === undefined ? null : String(r.title),
     token: String(r.token),
     createdAt: Number(r.created_at),
   };
@@ -41,7 +43,7 @@ export async function countGuests(): Promise<number> {
 export async function listGuests(): Promise<Guest[]> {
   const client = await db();
   const rs = await client.execute(
-    "SELECT id, name, token, created_at FROM guests ORDER BY created_at DESC"
+    "SELECT id, name, title, token, created_at FROM guests ORDER BY created_at DESC"
   );
   return rs.rows.map(rowToGuest);
 }
@@ -55,6 +57,7 @@ export async function addGuest(name: string): Promise<Guest> {
     const guest: Guest = {
       id: crypto.randomUUID(),
       name: clean,
+      title: null,
       token: makeToken(),
       createdAt: Date.now(),
     };
@@ -106,8 +109,19 @@ export async function getGuestByToken(token: string): Promise<Guest | null> {
   if (!token) return null;
   const client = await db();
   const rs = await client.execute({
-    sql: "SELECT id, name, token, created_at FROM guests WHERE token = ? LIMIT 1",
+    sql: "SELECT id, name, title, token, created_at FROM guests WHERE token = ? LIMIT 1",
     args: [token],
   });
   return rs.rows[0] ? rowToGuest(rs.rows[0]) : null;
+}
+
+export async function updateGuestTitle(
+  id: string,
+  title: string | null
+): Promise<void> {
+  const client = await db();
+  await client.execute({
+    sql: "UPDATE guests SET title = ? WHERE id = ?",
+    args: [title, id],
+  });
 }
