@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLenis } from "lenis/react";
 import Monogram from "./Monogram";
 
 /**
@@ -10,17 +11,22 @@ import Monogram from "./Monogram";
 export default function Cover() {
   const [opening, setOpening] = useState(false);
   const [done, setDone] = useState(false);
+  const lenis = useLenis();
 
   useEffect(() => {
+    // Lock scrolling (native overflow + Lenis if active) while the cover is up.
     if (done) {
       document.body.style.overflow = "";
+      lenis?.start();
       return;
     }
     document.body.style.overflow = "hidden";
+    lenis?.stop();
     return () => {
       document.body.style.overflow = "";
+      lenis?.start();
     };
-  }, [done]);
+  }, [done, lenis]);
 
   function open() {
     if (opening) return;

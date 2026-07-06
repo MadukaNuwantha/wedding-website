@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Great_Vibes, Cormorant_Garamond, Montserrat, Cinzel } from "next/font/google";
 import "./globals.css";
+import SmoothScroll from "@/components/SmoothScroll";
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
@@ -47,7 +48,7 @@ export default function RootLayout({
       className={`${greatVibes.variable} ${cormorant.variable} ${montserrat.variable} ${cinzel.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col text-ink">
-        {children}
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   );
