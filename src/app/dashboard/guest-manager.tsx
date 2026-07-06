@@ -59,6 +59,16 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const importRef = useRef<HTMLFormElement>(null);
   const [origin, setOrigin] = useState("");
+  const [query, setQuery] = useState("");
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? guests.filter(
+        (g) =>
+          g.name.toLowerCase().includes(q) ||
+          g.token.toLowerCase().includes(q)
+      )
+    : guests;
 
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -155,17 +165,45 @@ export default function GuestManager({ guests }: { guests: Guest[] }) {
             Guests
           </h2>
           <span className="font-sans text-sm text-ink/50">
-            {guests.length} {guests.length === 1 ? "guest" : "guests"}
+            {q ? `${filtered.length} of ${guests.length}` : guests.length}{" "}
+            {guests.length === 1 ? "guest" : "guests"}
           </span>
         </div>
+
+        {guests.length > 0 && (
+          <div className="relative mb-4">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-silver-deep"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search guests by name…"
+              aria-label="Search guests"
+              className={`${inputBase} pl-11`}
+            />
+          </div>
+        )}
 
         {guests.length === 0 ? (
           <p className="card rounded-2xl p-8 text-center font-sans text-sm text-ink/50">
             No guests yet. Add your first guest above.
           </p>
+        ) : filtered.length === 0 ? (
+          <p className="card rounded-2xl p-8 text-center font-sans text-sm text-ink/50">
+            No guests match “{query.trim()}”.
+          </p>
         ) : (
           <ul className="space-y-3">
-            {guests.map((g) => {
+            {filtered.map((g) => {
               const url = origin ? inviteUrl(origin, g.token) : "";
               return (
                 <li
