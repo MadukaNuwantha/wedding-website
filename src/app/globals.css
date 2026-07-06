@@ -26,6 +26,7 @@
   --font-script: var(--font-great-vibes);
   --font-serif: var(--font-cormorant);
   --font-sans: var(--font-montserrat);
+  --font-display: var(--font-cinzel);
 }
 
 html {
