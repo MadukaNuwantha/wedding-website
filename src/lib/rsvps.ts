@@ -63,6 +63,15 @@ export async function listRsvps(): Promise<Rsvp[]> {
   return rs.rows.map(rowToRsvp);
 }
 
+/** Distinct current guests who have at least one RSVP (for response rate). */
+export async function respondedGuestCount(): Promise<number> {
+  const client = await db();
+  const rs = await client.execute(
+    "SELECT COUNT(DISTINCT r.token) AS n FROM rsvps r JOIN guests g ON g.token = r.token"
+  );
+  return Number(rs.rows[0]?.n ?? 0);
+}
+
 export async function rsvpStats(): Promise<RsvpStats> {
   const client = await db();
   const rs = await client.execute(`

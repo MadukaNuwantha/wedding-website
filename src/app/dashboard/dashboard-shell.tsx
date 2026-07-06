@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { logout } from "@/lib/auth-actions";
 
 type NavItem = {
@@ -100,50 +101,118 @@ export default function DashboardShell({
 }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const activeItem = NAV.find((item) => isActive(item.href));
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  // Position the drawer directly below the header (whatever its height is).
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerH, setHeaderH] = useState(56);
+  useEffect(() => {
+    const measure = () => setHeaderH(headerRef.current?.offsetHeight ?? 56);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   return (
     <div className="min-h-dvh bg-tint">
-      {/* Top bar */}
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-line bg-white/85 px-5 py-3.5 backdrop-blur sm:px-8">
-        <div>
-          <p className="eyebrow">Maduka &amp; Marine</p>
-          <p className="font-serif text-lg font-light leading-tight text-navy">
-            Admin
-          </p>
-        </div>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span className="hidden font-sans text-sm text-ink/60 sm:inline">
-            Signed in as{" "}
-            <span className="font-semibold text-navy">{username}</span>
-          </span>
-          <form action={logout}>
+      {/* Sticky header (+ mobile dropdown) */}
+      <div className="sticky top-0 z-30">
+        <header
+          ref={headerRef}
+          className="flex items-center justify-between gap-3 border-b border-line bg-white/90 px-4 py-3 backdrop-blur sm:px-8 sm:py-3.5"
+        >
+          <div className="flex min-w-0 items-center gap-2.5">
             <button
-              type="submit"
-              className="rounded-full border border-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-navy transition-colors hover:bg-navy hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
+              aria-expanded={menuOpen}
+              className="-ml-1 rounded-lg p-2 text-navy transition-colors hover:bg-tint md:hidden"
             >
-              Sign Out
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="h-5 w-5"
+              >
+                {menuOpen ? (
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                ) : (
+                  <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+                )}
+              </svg>
             </button>
-          </form>
-        </div>
-      </header>
+            <div className="min-w-0">
+              <p className="eyebrow">Maduka &amp; Marine</p>
+              <p className="truncate font-serif text-lg font-light leading-tight text-navy">
+                {/* Current section on mobile; "Admin" on desktop */}
+                <span className="md:hidden">{activeItem?.label ?? "Admin"}</span>
+                <span className="hidden md:inline">Admin</span>
+              </p>
+            </div>
+          </div>
+          <div className="hidden items-center gap-4 md:flex">
+            <span className="font-sans text-sm text-ink/60">
+              Signed in as{" "}
+              <span className="font-semibold text-navy">{username}</span>
+            </span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-full border border-navy px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-navy transition-colors hover:bg-navy hover:text-ivory focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              >
+                Sign Out
+              </button>
+            </form>
+          </div>
+        </header>
 
-      {/* Mobile tab bar */}
-      <nav className="flex gap-2 overflow-x-auto border-b border-line bg-white px-4 py-2 md:hidden">
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={isActive(item.href) ? "page" : undefined}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] transition-colors ${
-              isActive(item.href)
-                ? "bg-navy text-ivory"
-                : "text-ink/60 hover:text-navy"
-            }`}
+      </div>
+
+      {/* Mobile side drawer (opens from the left, below the header) */}
+      {menuOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+            className="animate-fade-in fixed inset-0 z-20 bg-navy-deep/30 md:hidden"
+          />
+          <nav
+            style={{ top: headerH }}
+            className="animate-slide-in-left fixed bottom-0 left-0 z-30 flex w-72 max-w-[82%] flex-col overflow-y-auto border-r border-line bg-white px-3 py-4 shadow-2xl md:hidden"
           >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+            <div className="space-y-1">
+              {NAV.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(item.href)}
+                />
+              ))}
+            </div>
+            <div className="mt-auto border-t border-line pt-3">
+              <p className="px-3.5 pb-2 font-sans text-xs text-ink/50">
+                Signed in as{" "}
+                <span className="font-semibold text-navy">{username}</span>
+              </p>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="w-full rounded-xl border border-navy px-4 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.16em] text-navy transition-colors hover:bg-navy hover:text-ivory"
+                >
+                  Sign Out
+                </button>
+              </form>
+            </div>
+          </nav>
+        </>
+      )}
 
       <div className="mx-auto flex max-w-6xl gap-8 px-4 py-8 sm:px-8">
         {/* Sidebar (desktop) */}

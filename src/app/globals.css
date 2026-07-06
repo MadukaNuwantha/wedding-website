@@ -167,10 +167,23 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* Mobile drawer menu */
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-left { animation: slide-in-left 0.22s ease-out; }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; filter: none; transition: none; }
   .float-slow { animation: none; }
+  .animate-slide-in-left, .animate-fade-in { animation: none !important; }
   /* Show the confirmation content without motion. */
   [style*="confetti-fall"],
   [style*="float-up-fade"] { display: none !important; }
