@@ -37,6 +37,20 @@ const NAV: NavItem[] = [
     ),
   },
   {
+    href: "/dashboard/categories",
+    label: "Categories",
+    icon: (
+      <>
+        <path
+          d="M4 5h9l7 7-8 8-8-8V5Z"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <circle cx="8.5" cy="9.5" r="1.4" />
+      </>
+    ),
+  },
+  {
     href: "/dashboard/rsvps",
     label: "RSVP List",
     icon: (

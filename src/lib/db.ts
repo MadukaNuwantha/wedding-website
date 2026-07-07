@@ -38,15 +38,25 @@ async function ensureSchema(client: Client): Promise<void> {
         key   TEXT PRIMARY KEY,
         value TEXT NOT NULL
       )`,
+      `CREATE TABLE IF NOT EXISTS categories (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
     ],
     "write"
   );
 
-  // Migration for databases created before the title column existed.
-  try {
-    await client.execute("ALTER TABLE guests ADD COLUMN title TEXT");
-  } catch {
-    /* column already exists */
+  // Migrations for columns added after the tables first shipped.
+  for (const sql of [
+    "ALTER TABLE guests ADD COLUMN title TEXT",
+    "ALTER TABLE guests ADD COLUMN category_id TEXT",
+  ]) {
+    try {
+      await client.execute(sql);
+    } catch {
+      /* column already exists */
+    }
   }
 }
 

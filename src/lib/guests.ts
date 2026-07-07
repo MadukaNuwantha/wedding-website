@@ -8,15 +8,19 @@ export type Guest = {
   title: string | null;
   token: string;
   createdAt: number;
+  categoryId: string | null;
+  categoryName: string | null;
 };
 
 function rowToGuest(r: Row): Guest {
   return {
     id: String(r.id),
     name: String(r.name),
-    title: r.title === null || r.title === undefined ? null : String(r.title),
+    title: r.title == null ? null : String(r.title),
     token: String(r.token),
     createdAt: Number(r.created_at),
+    categoryId: r.category_id == null ? null : String(r.category_id),
+    categoryName: r.category_name == null ? null : String(r.category_name),
   };
 }
 
@@ -42,13 +46,20 @@ export async function countGuests(): Promise<number> {
 
 export async function listGuests(): Promise<Guest[]> {
   const client = await db();
-  const rs = await client.execute(
-    "SELECT id, name, title, token, created_at FROM guests ORDER BY created_at DESC"
-  );
+  const rs = await client.execute(`
+    SELECT g.id, g.name, g.title, g.token, g.created_at, g.category_id,
+      c.name AS category_name
+    FROM guests g
+    LEFT JOIN categories c ON c.id = g.category_id
+    ORDER BY g.created_at DESC
+  `);
   return rs.rows.map(rowToGuest);
 }
 
-export async function addGuest(name: string): Promise<Guest> {
+export async function addGuest(
+  name: string,
+  categoryId: string | null = null
+): Promise<Guest> {
   const client = await db();
   const clean = name.trim();
 
@@ -60,11 +71,13 @@ export async function addGuest(name: string): Promise<Guest> {
       title: null,
       token: makeToken(),
       createdAt: Date.now(),
+      categoryId,
+      categoryName: null,
     };
     try {
       await client.execute({
-        sql: "INSERT INTO guests (id, name, token, created_at) VALUES (?, ?, ?, ?)",
-        args: [guest.id, guest.name, guest.token, guest.createdAt],
+        sql: "INSERT INTO guests (id, name, token, created_at, category_id) VALUES (?, ?, ?, ?, ?)",
+        args: [guest.id, guest.name, guest.token, guest.createdAt, categoryId],
       });
       return guest;
     } catch (err) {
@@ -77,7 +90,10 @@ export async function addGuest(name: string): Promise<Guest> {
 }
 
 /** Insert many guests at once (used by CSV import). Returns the count added. */
-export async function addGuests(names: string[]): Promise<number> {
+export async function addGuests(
+  names: string[],
+  categoryId: string | null = null
+): Promise<number> {
   const client = await db();
   const clean = names.map((n) => n.trim()).filter(Boolean);
   if (clean.length === 0) return 0;
@@ -89,9 +105,9 @@ export async function addGuests(names: string[]): Promise<number> {
     while (used.has(token)) token = makeToken();
     used.add(token);
     return {
-      sql: "INSERT INTO guests (id, name, token, created_at) VALUES (?, ?, ?, ?)",
+      sql: "INSERT INTO guests (id, name, token, created_at, category_id) VALUES (?, ?, ?, ?, ?)",
       // +i keeps the import order stable when sorting by created_at.
-      args: [crypto.randomUUID(), name, token, now + i],
+      args: [crypto.randomUUID(), name, token, now + i, categoryId],
     };
   });
 
@@ -109,10 +125,38 @@ export async function getGuestByToken(token: string): Promise<Guest | null> {
   if (!token) return null;
   const client = await db();
   const rs = await client.execute({
-    sql: "SELECT id, name, title, token, created_at FROM guests WHERE token = ? LIMIT 1",
+    sql: `SELECT g.id, g.name, g.title, g.token, g.created_at, g.category_id,
+            c.name AS category_name
+          FROM guests g
+          LEFT JOIN categories c ON c.id = g.category_id
+          WHERE g.token = ? LIMIT 1`,
     args: [token],
   });
   return rs.rows[0] ? rowToGuest(rs.rows[0]) : null;
+}
+
+export async function updateGuestCategory(
+  id: string,
+  categoryId: string | null
+): Promise<void> {
+  const client = await db();
+  await client.execute({
+    sql: "UPDATE guests SET category_id = ? WHERE id = ?",
+    args: [categoryId, id],
+  });
+}
+
+export async function setGuestsCategory(
+  ids: string[],
+  categoryId: string | null
+): Promise<void> {
+  if (ids.length === 0) return;
+  const client = await db();
+  const placeholders = ids.map(() => "?").join(",");
+  await client.execute({
+    sql: `UPDATE guests SET category_id = ? WHERE id IN (${placeholders})`,
+    args: [categoryId, ...ids],
+  });
 }
 
 export async function updateGuestTitle(

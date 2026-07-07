@@ -8,7 +8,9 @@ import {
   deleteGuest,
   deleteGuests,
   setGuestsTitle,
+  setGuestsCategory,
   updateGuestTitle,
+  updateGuestCategory,
 } from "@/lib/guests";
 
 export type AddGuestState = { error?: string; ok?: boolean } | undefined;
@@ -23,8 +25,9 @@ export async function addGuestAction(
   if (!name) return { error: "Please enter a name." };
   if (name.length > 120) return { error: "That name is too long." };
 
-  await addGuest(name);
-  revalidatePath("/dashboard");
+  const category = String(formData.get("category") ?? "") || null;
+  await addGuest(name, category);
+  revalidatePath("/dashboard/custom-url");
   return { ok: true };
 }
 
@@ -63,8 +66,9 @@ export async function importGuestsAction(
   const names = parseNames(await file.text()).slice(0, 1000);
   if (names.length === 0) return { error: "No names found in that file." };
 
-  const added = await addGuests(names);
-  revalidatePath("/dashboard");
+  const category = String(formData.get("category") ?? "") || null;
+  const added = await addGuests(names, category);
+  revalidatePath("/dashboard/custom-url");
   return { added };
 }
 
@@ -115,4 +119,27 @@ export async function bulkSetTitleAction(
   await setGuestsTitle(clean, t || null);
   revalidatePath("/dashboard/custom-url");
   revalidatePath("/dashboard/invitations");
+}
+
+export async function updateGuestCategoryAction(
+  id: string,
+  categoryId: string
+): Promise<void> {
+  if (!(await getSession())) return;
+  if (!id) return;
+  await updateGuestCategory(id, categoryId || null);
+  revalidatePath("/dashboard/custom-url");
+}
+
+export async function bulkSetCategoryAction(
+  ids: string[],
+  categoryId: string
+): Promise<void> {
+  if (!(await getSession())) return;
+
+  const clean = (ids ?? []).filter(Boolean).slice(0, 2000);
+  if (clean.length === 0) return;
+
+  await setGuestsCategory(clean, categoryId || null);
+  revalidatePath("/dashboard/custom-url");
 }

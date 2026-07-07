@@ -1,8 +1,12 @@
 import { listGuests } from "@/lib/guests";
+import { listCategories } from "@/lib/categories";
 import GuestManager from "../guest-manager";
 
 export default async function CustomUrlPage() {
-  const guests = await listGuests();
+  const [guests, categories] = await Promise.all([
+    listGuests(),
+    listCategories(),
+  ]);
 
   return (
     <div>
@@ -17,7 +21,7 @@ export default async function CustomUrlPage() {
         </p>
       </header>
 
-      <GuestManager guests={guests} />
+      <GuestManager guests={guests} categories={categories} />
     </div>
   );
 }
