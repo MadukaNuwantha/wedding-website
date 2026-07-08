@@ -22,6 +22,7 @@ import {
 import { markSendAction } from "@/lib/guest-actions";
 import type { CardConfigs, Templates } from "@/lib/settings";
 import type { Guest, SendKey, SentStatus } from "@/lib/guests";
+import type { Category } from "@/lib/categories";
 
 // Cache decoded base images so re-renders don't refetch.
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
@@ -263,10 +264,12 @@ function SendChips({ sent }: { sent: SentStatus }) {
 
 export default function InvitationStudio({
   guests,
+  categories,
   templates,
   cardConfigs,
 }: {
   guests: Guest[];
+  categories: Category[];
   templates: Templates;
   cardConfigs: CardConfigs;
 }) {
@@ -276,6 +279,7 @@ export default function InvitationStudio({
   const [active, setActive] = useState<CardKey>("wedding");
   const [sample, setSample] = useState(guests[0]?.name ?? "Guest Name");
   const [query, setQuery] = useState("");
+  const [catFilter, setCatFilter] = useState(""); // "", category id, or "none"
   const [busy, setBusy] = useState<string | null>(null);
   const [tpl, setTpl] = useState<Templates>(templates);
   const [saveState, saveAction, saving] = useActionState<
@@ -343,9 +347,13 @@ export default function InvitationStudio({
     setDraft((prev) => ({ ...prev, [active]: locked[active] }));
 
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? guests.filter((g) => g.name.toLowerCase().includes(q))
-    : guests;
+  const filtered = guests.filter((g) => {
+    if (catFilter === "none" && g.categoryId) return false;
+    if (catFilter && catFilter !== "none" && g.categoryId !== catFilter)
+      return false;
+    if (q && !g.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
 
   const fullySent = guests.filter((g) => {
     const s = effSent(g);
@@ -724,13 +732,29 @@ export default function InvitationStudio({
           </p>
         ) : (
           <>
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search guests by name…"
-              className="mb-4 w-full rounded-xl border border-line bg-white px-4 py-3 font-sans text-sm text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
-            />
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search guests by name…"
+                className="w-full flex-1 rounded-xl border border-line bg-white px-4 py-3 font-sans text-sm text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
+              />
+              <select
+                value={catFilter}
+                onChange={(e) => setCatFilter(e.target.value)}
+                aria-label="Filter by category"
+                className="rounded-xl border border-line bg-white px-4 py-3 font-sans text-sm text-ink outline-none focus:border-navy sm:w-56"
+              >
+                <option value="">All categories</option>
+                <option value="none">Uncategorised</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <ul className="space-y-2.5">
               {filtered.map((g) => (
                 <li
@@ -755,7 +779,7 @@ export default function InvitationStudio({
               ))}
               {filtered.length === 0 && (
                 <li className="card rounded-2xl p-6 text-center font-sans text-sm text-ink/50">
-                  No guests match “{query.trim()}”.
+                  No guests match the current filter.
                 </li>
               )}
             </ul>

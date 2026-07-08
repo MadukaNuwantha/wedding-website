@@ -1,10 +1,12 @@
 import { listGuests } from "@/lib/guests";
+import { listCategories } from "@/lib/categories";
 import { getTemplates, getCardConfigs } from "@/lib/settings";
 import InvitationStudio from "./invitation-studio";
 
 export default async function InvitationsPage() {
-  const [guests, templates, cardConfigs] = await Promise.all([
+  const [guests, categories, templates, cardConfigs] = await Promise.all([
     listGuests(),
+    listCategories(),
     getTemplates(),
     getCardConfigs(),
   ]);
@@ -25,6 +27,7 @@ export default async function InvitationsPage() {
 
       <InvitationStudio
         guests={guests}
+        categories={categories}
         templates={templates}
         cardConfigs={cardConfigs}
       />

@@ -173,6 +173,7 @@ export default function GuestManager({
       return next;
     });
     startTransition(() => bulkSetTitleAction(ids, bulkTitle));
+    setSelected(new Set());
   }
 
   function applyBulkCategory() {
@@ -184,6 +185,7 @@ export default function GuestManager({
       return next;
     });
     startTransition(() => bulkSetCategoryAction(ids, bulkCategory));
+    setSelected(new Set());
   }
 
   function deleteSelected() {
