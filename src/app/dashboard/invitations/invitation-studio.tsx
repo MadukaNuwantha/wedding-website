@@ -19,8 +19,9 @@ import {
   saveCardConfigAction,
   type SaveTemplatesState,
 } from "@/lib/settings-actions";
+import { markSendAction } from "@/lib/guest-actions";
 import type { CardConfigs, Templates } from "@/lib/settings";
-import type { Guest } from "@/lib/guests";
+import type { Guest, SendKey, SentStatus } from "@/lib/guests";
 
 // Cache decoded base images so re-renders don't refetch.
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
@@ -166,16 +167,97 @@ function Slider({
   );
 }
 
-const SEND_BTN =
-  "rounded-full bg-[#128C7E] px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-[#0f7a6c] disabled:opacity-50";
-const DL_BTN =
-  "rounded-full border border-navy px-3.5 py-1.5 font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy transition-colors hover:bg-navy hover:text-ivory disabled:opacity-50";
-
 function WaIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
       <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.8c2.16 0 4.19.84 5.72 2.37a8.06 8.06 0 0 1 2.37 5.74c0 4.47-3.64 8.11-8.11 8.11a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.12.82.83-3.04-.19-.31a8.05 8.05 0 0 1-1.24-4.29c0-4.47 3.64-8.11 8.11-8.11Zm4.47 10.15c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.77.95-.14.16-.28.18-.52.06-.24-.12-1.03-.38-1.96-1.21-.72-.64-1.21-1.44-1.35-1.68-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.32-.75-1.81-.2-.47-.4-.41-.55-.42h-.47c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2 0 1.18.86 2.32.98 2.48.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.57.18 1.1.16 1.51.1.46-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28Z" />
     </svg>
+  );
+}
+
+const MODAL_SEND =
+  "flex items-center justify-center gap-2 rounded-xl bg-[#128C7E] px-3 py-3 font-sans text-xs font-semibold uppercase tracking-[0.08em] text-white shadow-sm shadow-[#128C7E]/25 transition-all hover:-translate-y-px hover:bg-[#0f7a6c] disabled:opacity-50 disabled:hover:translate-y-0";
+const MODAL_DL =
+  "flex items-center justify-center gap-2 rounded-xl border border-navy px-3 py-3 font-sans text-xs font-semibold uppercase tracking-[0.08em] text-navy transition-all hover:bg-navy hover:text-ivory disabled:opacity-50";
+
+function DownloadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+      <path d="M12 3v11m0 0 4-4m-4 4-4-4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 19h14" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+      <path d="M9 15l6-6" strokeLinecap="round" />
+      <path d="M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5L16 11.5" strokeLinecap="round" />
+      <path d="M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" className="h-4 w-4">
+      <path d="M22 2 11 13" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M22 2 15 22l-4-9-9-4 20-7Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SentToggle({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label
+      className={`flex shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-xl border px-3 py-2.5 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.08em] transition-colors ${
+        checked
+          ? "border-green-500 bg-green-50 text-green-700"
+          : "border-line text-ink/45 hover:text-navy"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3.5 w-3.5 accent-green-600"
+      />
+      Sent
+    </label>
+  );
+}
+
+function SendChips({ sent }: { sent: SentStatus }) {
+  const items: [string, string, boolean][] = [
+    ["W", "Wedding", sent.wedding],
+    ["R", "Reception", sent.reception],
+    ["L", "RSVP link", sent.rsvp],
+  ];
+  const count = items.filter(([, , on]) => on).length;
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5">
+      {items.map(([lbl, title, on]) => (
+        <span
+          key={lbl}
+          title={`${title}: ${on ? "sent" : "not sent"}`}
+          className={`inline-flex h-4 w-4 items-center justify-center rounded text-[0.55rem] font-bold ${
+            on ? "bg-green-500 text-white" : "bg-tint text-ink/40"
+          }`}
+        >
+          {lbl}
+        </span>
+      ))}
+      <span className="ml-1 font-sans text-[0.7rem] text-ink/45">
+        {count}/3 sent
+      </span>
+    </div>
   );
 }
 
@@ -201,10 +283,37 @@ export default function InvitationStudio({
     FormData
   >(saveTemplatesAction, undefined);
   const [savingPlacement, startPlacementSave] = useTransition();
+  const [, startMark] = useTransition();
   const [origin, setOrigin] = useState("");
+  const [modalGuest, setModalGuest] = useState<Guest | null>(null);
+  const [sends, setSends] = useState<Record<string, SentStatus>>(() =>
+    Object.fromEntries(guests.map((g) => [g.id, { ...g.sent }]))
+  );
   const previewRef = useRef<HTMLCanvasElement>(null);
 
+  const effSent = (g: Guest): SentStatus => sends[g.id] ?? g.sent;
+  function markSent(id: string, type: SendKey, value: boolean) {
+    setSends((prev) => ({
+      ...prev,
+      [id]: {
+        ...(prev[id] ?? { wedding: false, reception: false, rsvp: false }),
+        [type]: value,
+      },
+    }));
+    startMark(() => markSendAction(id, type, value));
+  }
+
   useEffect(() => setOrigin(window.location.origin), []);
+
+  // Close the actions modal on Escape.
+  useEffect(() => {
+    if (!modalGuest) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModalGuest(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modalGuest]);
 
   // Live preview follows the draft (what you're editing).
   useEffect(() => {
@@ -237,6 +346,11 @@ export default function InvitationStudio({
   const filtered = q
     ? guests.filter((g) => g.name.toLowerCase().includes(q))
     : guests;
+
+  const fullySent = guests.filter((g) => {
+    const s = effSent(g);
+    return s.wedding && s.reception && s.rsvp;
+  }).length;
 
   function displayName(g: Guest): string {
     const t = (g.title ?? "").trim();
@@ -314,7 +428,8 @@ export default function InvitationStudio({
   async function handleSend(key: CardKey, g: Guest) {
     setBusy(`${g.id}:send-${key}`);
     try {
-      await shareOne(key, g);
+      const ok = await shareOne(key, g);
+      if (ok) markSent(g.id, key, true);
     } finally {
       setBusy(null);
     }
@@ -337,6 +452,7 @@ export default function InvitationStudio({
       "_blank",
       "noopener,noreferrer"
     );
+    markSent(g.id, "rsvp", true);
   }
 
   return (
@@ -580,13 +696,17 @@ export default function InvitationStudio({
             Send &amp; download
           </h2>
           <span className="font-sans text-sm text-ink/50">
-            {guests.length} {guests.length === 1 ? "guest" : "guests"}
+            {guests.length > 0 && (
+              <span className="font-semibold text-green-700">
+                {fullySent}/{guests.length} done
+              </span>
+            )}
           </span>
         </div>
         <p className="mb-3 font-sans text-xs text-ink/45">
-          Wedding/Reception open WhatsApp with the card + message (recipient
-          gets one image with a caption). RSVP sends a text with the guest&apos;s
-          personal invite link. Pick the contact and send.
+          Each guest shows how many of the three you&apos;ve sent (W · R · L).
+          Sending marks it automatically; you can also tick “Sent” by hand in
+          the guest&apos;s panel.
         </p>
 
         {anyDirty && (
@@ -615,65 +735,22 @@ export default function InvitationStudio({
               {filtered.map((g) => (
                 <li
                   key={g.id}
-                  className="card flex flex-col gap-3 rounded-2xl p-4"
+                  className="card flex items-center justify-between gap-3 rounded-2xl p-4"
                 >
-                  <p className="truncate font-serif text-lg text-navy">
-                    {displayName(g)}
-                  </p>
-                  <div className="flex flex-col gap-2.5 border-t border-line pt-3">
-                    {/* Send via WhatsApp */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="mr-0.5 inline-flex items-center gap-1 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-green-700">
-                        <WaIcon /> Send
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleSend("wedding", g)}
-                        disabled={busy !== null}
-                        className={SEND_BTN}
-                      >
-                        {busy === `${g.id}:send-wedding` ? "…" : "Wedding"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSend("reception", g)}
-                        disabled={busy !== null}
-                        className={SEND_BTN}
-                      >
-                        {busy === `${g.id}:send-reception` ? "…" : "Reception"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSendRsvp(g)}
-                        disabled={busy !== null}
-                        className={SEND_BTN}
-                      >
-                        RSVP
-                      </button>
-                    </div>
-                    {/* Download */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="mr-0.5 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-ink/40">
-                        Download
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleDownload("wedding", g)}
-                        disabled={busy !== null}
-                        className={DL_BTN}
-                      >
-                        {busy === `${g.id}:wedding` ? "…" : "Wedding"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownload("reception", g)}
-                        disabled={busy !== null}
-                        className={DL_BTN}
-                      >
-                        {busy === `${g.id}:reception` ? "…" : "Reception"}
-                      </button>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-serif text-lg text-navy">
+                      {displayName(g)}
+                    </p>
+                    <SendChips sent={effSent(g)} />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalGuest(g)}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full bg-navy px-5 py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-ivory shadow-sm shadow-navy/20 transition-all hover:-translate-y-px hover:bg-navy-600 hover:shadow-md"
+                  >
+                    <SendIcon />
+                    Send / Download
+                  </button>
                 </li>
               ))}
               {filtered.length === 0 && (
@@ -685,6 +762,141 @@ export default function InvitationStudio({
           </>
         )}
       </div>
+
+      {/* Per-guest actions modal */}
+      {modalGuest && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setModalGuest(null)}
+          className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-navy-deep/50 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="animate-modal-in card w-full max-w-md overflow-hidden rounded-3xl shadow-2xl"
+          >
+            {/* Header */}
+            <div className="relative bg-gradient-to-b from-tint to-white px-6 pb-5 pt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setModalGuest(null)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-full p-1.5 text-ink/45 transition-colors hover:bg-white hover:text-navy"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  className="h-5 w-5"
+                >
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+              <p className="eyebrow">Send Invitations</p>
+              <h3 className="mx-auto mt-1 max-w-[90%] truncate font-serif text-2xl font-light text-navy">
+                {displayName(modalGuest)}
+              </h3>
+              <span className="silver-rule mx-auto mt-3 block w-16" />
+            </div>
+
+            <div className="space-y-5 px-6 pb-6 pt-5">
+              {/* Send via WhatsApp */}
+              <div>
+                <p className="mb-2.5 inline-flex items-center gap-1.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-[#128C7E]">
+                  <WaIcon /> Send via WhatsApp
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSend("wedding", modalGuest)}
+                      disabled={busy !== null}
+                      className={`${MODAL_SEND} flex-1 ${
+                        effSent(modalGuest).wedding ? "ring-2 ring-green-300" : ""
+                      }`}
+                    >
+                      <WaIcon />
+                      {busy === `${modalGuest.id}:send-wedding`
+                        ? "…"
+                        : "Wedding"}
+                    </button>
+                    <SentToggle
+                      checked={effSent(modalGuest).wedding}
+                      onChange={(v) => markSent(modalGuest.id, "wedding", v)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSend("reception", modalGuest)}
+                      disabled={busy !== null}
+                      className={`${MODAL_SEND} flex-1 ${
+                        effSent(modalGuest).reception
+                          ? "ring-2 ring-green-300"
+                          : ""
+                      }`}
+                    >
+                      <WaIcon />
+                      {busy === `${modalGuest.id}:send-reception`
+                        ? "…"
+                        : "Reception"}
+                    </button>
+                    <SentToggle
+                      checked={effSent(modalGuest).reception}
+                      onChange={(v) => markSent(modalGuest.id, "reception", v)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSendRsvp(modalGuest)}
+                      disabled={busy !== null}
+                      className={`${MODAL_SEND} flex-1 ${
+                        effSent(modalGuest).rsvp ? "ring-2 ring-green-300" : ""
+                      }`}
+                    >
+                      <LinkIcon />
+                      RSVP Link
+                    </button>
+                    <SentToggle
+                      checked={effSent(modalGuest).rsvp}
+                      onChange={(v) => markSent(modalGuest.id, "rsvp", v)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Download */}
+              <div className="border-t border-line pt-5">
+                <p className="mb-2.5 inline-flex items-center gap-1.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] text-navy-600">
+                  <DownloadIcon /> Download cards
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleDownload("wedding", modalGuest)}
+                    disabled={busy !== null}
+                    className={MODAL_DL}
+                  >
+                    <DownloadIcon />
+                    {busy === `${modalGuest.id}:wedding` ? "…" : "Wedding"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload("reception", modalGuest)}
+                    disabled={busy !== null}
+                    className={MODAL_DL}
+                  >
+                    <DownloadIcon />
+                    {busy === `${modalGuest.id}:reception` ? "…" : "Reception"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

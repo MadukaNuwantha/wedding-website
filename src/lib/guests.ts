@@ -2,6 +2,9 @@ import crypto from "node:crypto";
 import type { Row } from "@libsql/client";
 import { db } from "./db";
 
+export type SendKey = "wedding" | "reception" | "rsvp";
+export type SentStatus = Record<SendKey, boolean>;
+
 export type Guest = {
   id: string;
   name: string;
@@ -10,6 +13,7 @@ export type Guest = {
   createdAt: number;
   categoryId: string | null;
   categoryName: string | null;
+  sent: SentStatus;
 };
 
 function rowToGuest(r: Row): Guest {
@@ -21,7 +25,30 @@ function rowToGuest(r: Row): Guest {
     createdAt: Number(r.created_at),
     categoryId: r.category_id == null ? null : String(r.category_id),
     categoryName: r.category_name == null ? null : String(r.category_name),
+    sent: {
+      wedding: r.sent_wedding != null,
+      reception: r.sent_reception != null,
+      rsvp: r.sent_rsvp != null,
+    },
   };
+}
+
+const SENT_COLUMN: Record<SendKey, string> = {
+  wedding: "sent_wedding",
+  reception: "sent_reception",
+  rsvp: "sent_rsvp",
+};
+
+export async function markSend(
+  guestId: string,
+  type: SendKey,
+  sent: boolean
+): Promise<void> {
+  const client = await db();
+  await client.execute({
+    sql: `UPDATE guests SET ${SENT_COLUMN[type]} = ? WHERE id = ?`,
+    args: [sent ? Date.now() : null, guestId],
+  });
 }
 
 // Lowercase, unambiguous alphabet (no 0/o/1/l/i) for clean, readable codes.
@@ -48,6 +75,7 @@ export async function listGuests(): Promise<Guest[]> {
   const client = await db();
   const rs = await client.execute(`
     SELECT g.id, g.name, g.title, g.token, g.created_at, g.category_id,
+      g.sent_wedding, g.sent_reception, g.sent_rsvp,
       c.name AS category_name
     FROM guests g
     LEFT JOIN categories c ON c.id = g.category_id
@@ -58,7 +86,8 @@ export async function listGuests(): Promise<Guest[]> {
 
 export async function addGuest(
   name: string,
-  categoryId: string | null = null
+  categoryId: string | null = null,
+  title: string | null = null
 ): Promise<Guest> {
   const client = await db();
   const clean = name.trim();
@@ -68,16 +97,17 @@ export async function addGuest(
     const guest: Guest = {
       id: crypto.randomUUID(),
       name: clean,
-      title: null,
+      title,
       token: makeToken(),
       createdAt: Date.now(),
       categoryId,
       categoryName: null,
+      sent: { wedding: false, reception: false, rsvp: false },
     };
     try {
       await client.execute({
-        sql: "INSERT INTO guests (id, name, token, created_at, category_id) VALUES (?, ?, ?, ?, ?)",
-        args: [guest.id, guest.name, guest.token, guest.createdAt, categoryId],
+        sql: "INSERT INTO guests (id, name, title, token, created_at, category_id) VALUES (?, ?, ?, ?, ?, ?)",
+        args: [guest.id, guest.name, title, guest.token, guest.createdAt, categoryId],
       });
       return guest;
     } catch (err) {

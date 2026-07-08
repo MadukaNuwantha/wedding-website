@@ -11,6 +11,8 @@ import {
   setGuestsCategory,
   updateGuestTitle,
   updateGuestCategory,
+  markSend,
+  type SendKey,
 } from "@/lib/guests";
 
 export type AddGuestState = { error?: string; ok?: boolean } | undefined;
@@ -26,7 +28,8 @@ export async function addGuestAction(
   if (name.length > 120) return { error: "That name is too long." };
 
   const category = String(formData.get("category") ?? "") || null;
-  await addGuest(name, category);
+  const title = String(formData.get("title") ?? "").trim().slice(0, 40) || null;
+  await addGuest(name, category, title);
   revalidatePath("/dashboard/custom-url");
   return { ok: true };
 }
@@ -142,4 +145,16 @@ export async function bulkSetCategoryAction(
 
   await setGuestsCategory(clean, categoryId || null);
   revalidatePath("/dashboard/custom-url");
+}
+
+export async function markSendAction(
+  guestId: string,
+  type: SendKey,
+  sent: boolean
+): Promise<void> {
+  if (!(await getSession())) return;
+  if (!guestId) return;
+  if (type !== "wedding" && type !== "reception" && type !== "rsvp") return;
+  await markSend(guestId, type, sent);
+  revalidatePath("/dashboard/invitations");
 }

@@ -209,6 +209,19 @@ export default function GuestManager({
           action={action}
           className="mt-4 flex flex-col gap-3 sm:flex-row"
         >
+          <select
+            name="title"
+            aria-label="Title"
+            defaultValue=""
+            className="rounded-xl border border-line bg-white px-3 py-3 font-sans text-sm text-ink outline-none focus:border-navy sm:w-32"
+          >
+            <option value="">Title</option>
+            {TITLES.filter(Boolean).map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
           <input
             name="name"
             type="text"
