@@ -23,7 +23,7 @@ const TIMELINE: Moment[] = [
 
 export default function Schedule() {
   return (
-    <section id="schedule" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+    <section id="schedule" className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-14">
       <div className="relative mx-auto max-w-3xl">
         <Reveal className="text-center">
           <p className="eyebrow">The Day</p>

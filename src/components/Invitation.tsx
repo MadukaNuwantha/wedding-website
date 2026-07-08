@@ -5,7 +5,7 @@ export default function Invitation() {
   return (
     <section
       id="invitation"
-      className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28"
+      className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-14"
     >
       <div className="relative mx-auto max-w-2xl text-center">
         <Reveal>

@@ -4,7 +4,7 @@ import Reveal from "./Reveal";
 
 export default function Story() {
   return (
-    <section id="story" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+    <section id="story" className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-14">
       <div className="relative mx-auto max-w-3xl text-center">
         <Reveal>
           <p className="eyebrow">Our Story</p>
@@ -18,22 +18,41 @@ export default function Story() {
         </Reveal>
 
         <Reveal delay={120}>
-          {/* Placeholder text — replace with your own story any time. */}
-          <p className="mt-10 font-serif text-xl leading-relaxed text-ink/80 sm:text-2xl">
-            After years of shared laughter, quiet moments, and a love that has
-            only grown deeper with time, Maduka and Marine are beginning their
-            greatest adventure yet &mdash; a life together.
-          </p>
-          <p className="mt-5 font-serif text-lg leading-relaxed text-ink/65 sm:text-xl">
-            We would be so grateful to have the people we love beside us as we say
-            &ldquo;I do.&rdquo; Thank you for being part of our journey.
-          </p>
+          <div className="mt-10 space-y-5 font-serif text-lg leading-relaxed text-ink/75 sm:text-xl">
+            <p>
+              For years we walked the same halls, knowing of each other from a
+              distance, yet somehow our paths never quite crossed. Two hearts in
+              the same place, waiting for the right moment to find each other.
+            </p>
+            <p>
+              Then, almost by chance, we started talking. And in that very first
+              conversation, something felt like home. We understood each other
+              completely, as if we had been waiting our whole lives for this
+              exact moment.
+            </p>
+            <p>
+              So we kept talking. One conversation became a thousand, late nights
+              turned into sunrises, and somewhere along the way, without ever
+              quite deciding to, we fell deeply in love. Every laugh, every quiet
+              moment, every memory we made together only drew us closer, until we
+              arrived at the most beautiful truth of all: we were meant to spend
+              our lives together.
+            </p>
+            <p>
+              Now, surrounded by the people who mean the most to us, we&rsquo;re
+              ready to begin our greatest adventure yet. It would mean the world
+              to have you beside us as we say &ldquo;I do.&rdquo; Thank you for
+              being part of our story, and for celebrating this love with us.
+            </p>
+          </div>
         </Reveal>
 
         <Reveal delay={200}>
           <Divider className="mt-14" />
-          <p className="mt-9 font-script text-5xl text-navy sm:text-6xl">
-            With love, Maduka &amp; Marine
+          <p className="mt-9 font-script text-5xl leading-tight text-navy sm:text-6xl">
+            With all our love
+            <br />
+            Maduka &amp; Marine
           </p>
         </Reveal>
       </div>

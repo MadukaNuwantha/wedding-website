@@ -30,7 +30,7 @@ export default function Rsvp({
   }, [state]);
 
   return (
-    <section id="rsvp" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+    <section id="rsvp" className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-14">
       <div className="relative mx-auto max-w-xl">
         <Reveal className="text-center">
           <p className="eyebrow">Kindly Reply</p>

@@ -49,7 +49,7 @@ function PinIcon() {
 
 export default function Details() {
   return (
-    <section id="details" className="relative overflow-hidden px-5 py-24 sm:px-8 sm:py-28">
+    <section id="details" className="relative overflow-hidden px-5 py-10 sm:px-8 sm:py-14">
       <div className="relative mx-auto max-w-5xl">
         <Reveal className="text-center">
           <p className="eyebrow">When &amp; Where</p>
