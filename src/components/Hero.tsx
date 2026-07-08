@@ -6,7 +6,7 @@ export default function Hero() {
     <section id="home" className="relative min-h-dvh overflow-hidden">
       {/* Background photo */}
       <Image
-        src="/couple.jpeg"
+        src="/couple.png"
         alt="Maduka & Marine"
         fill
         priority
