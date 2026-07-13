@@ -1,7 +1,12 @@
 import { db } from "./db";
-import { cardMeta, type CardConfig, type CardKey } from "./card-config";
+import { CARDS, type CardConfig, type CardKey } from "./card-config";
 
-export type Templates = { wedding: string; reception: string; rsvp: string };
+export type Templates = {
+  wedding: string;
+  reception: string;
+  homecoming: string;
+  rsvp: string;
+};
 export type CardConfigs = Record<CardKey, CardConfig>;
 
 export const DEFAULT_TEMPLATES: Templates = {
@@ -21,6 +26,14 @@ We would be honoured to have you join us for our wedding Reception.
 📍 Moon Light Hotel, Marawila
 
 We can't wait to celebrate with you! 💙`,
+  homecoming: `Dear <name>,
+
+We warmly invite you to celebrate our Homecoming with us.
+
+📅 Sunday, 2nd August 2026 — from 7:00 PM onwards
+📍 Groom's Residence, No. 315/A, Helan Mawatha, Wennappuwa
+
+We'd love to have you there. ❤️`,
   rsvp: `Dear <name>,
 
 You're warmly invited to Maduka & Marine's wedding! 💙
@@ -49,23 +62,24 @@ export async function setSetting(key: string, value: string): Promise<void> {
 }
 
 export async function getTemplates(): Promise<Templates> {
-  const [wedding, reception, rsvp] = await Promise.all([
+  const [wedding, reception, homecoming, rsvp] = await Promise.all([
     getSetting("template_wedding"),
     getSetting("template_reception"),
+    getSetting("template_homecoming"),
     getSetting("template_rsvp"),
   ]);
   return {
     wedding: wedding ?? DEFAULT_TEMPLATES.wedding,
     reception: reception ?? DEFAULT_TEMPLATES.reception,
+    homecoming: homecoming ?? DEFAULT_TEMPLATES.homecoming,
     rsvp: rsvp ?? DEFAULT_TEMPLATES.rsvp,
   };
 }
 
 export function defaultCardConfigs(): CardConfigs {
-  return {
-    wedding: { ...cardMeta("wedding").default },
-    reception: { ...cardMeta("reception").default },
-  };
+  return Object.fromEntries(
+    CARDS.map((c) => [c.key, { ...c.default }])
+  ) as CardConfigs;
 }
 
 /** Card name placement, shared across devices (unlike the old localStorage). */
@@ -75,10 +89,11 @@ export async function getCardConfigs(): Promise<CardConfigs> {
   if (!raw) return def;
   try {
     const saved = JSON.parse(raw) as Partial<CardConfigs>;
-    return {
-      wedding: { ...def.wedding, ...saved.wedding },
-      reception: { ...def.reception, ...saved.reception },
-    };
+    const merged = {} as CardConfigs;
+    for (const c of CARDS) {
+      merged[c.key] = { ...def[c.key], ...saved[c.key] };
+    }
+    return merged;
   } catch {
     return def;
   }

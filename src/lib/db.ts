@@ -53,6 +53,7 @@ async function ensureSchema(client: Client): Promise<void> {
     "ALTER TABLE guests ADD COLUMN category_id TEXT",
     "ALTER TABLE guests ADD COLUMN sent_wedding INTEGER",
     "ALTER TABLE guests ADD COLUMN sent_reception INTEGER",
+    "ALTER TABLE guests ADD COLUMN sent_homecoming INTEGER",
     "ALTER TABLE guests ADD COLUMN sent_rsvp INTEGER",
   ]) {
     try {

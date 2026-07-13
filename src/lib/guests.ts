@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type { Row } from "@libsql/client";
 import { db } from "./db";
 
-export type SendKey = "wedding" | "reception" | "rsvp";
+export type SendKey = "wedding" | "reception" | "homecoming" | "rsvp";
 export type SentStatus = Record<SendKey, boolean>;
 
 export type Guest = {
@@ -28,6 +28,7 @@ function rowToGuest(r: Row): Guest {
     sent: {
       wedding: r.sent_wedding != null,
       reception: r.sent_reception != null,
+      homecoming: r.sent_homecoming != null,
       rsvp: r.sent_rsvp != null,
     },
   };
@@ -36,6 +37,7 @@ function rowToGuest(r: Row): Guest {
 const SENT_COLUMN: Record<SendKey, string> = {
   wedding: "sent_wedding",
   reception: "sent_reception",
+  homecoming: "sent_homecoming",
   rsvp: "sent_rsvp",
 };
 
@@ -75,7 +77,7 @@ export async function listGuests(): Promise<Guest[]> {
   const client = await db();
   const rs = await client.execute(`
     SELECT g.id, g.name, g.title, g.token, g.created_at, g.category_id,
-      g.sent_wedding, g.sent_reception, g.sent_rsvp,
+      g.sent_wedding, g.sent_reception, g.sent_homecoming, g.sent_rsvp,
       c.name AS category_name
     FROM guests g
     LEFT JOIN categories c ON c.id = g.category_id
@@ -102,7 +104,12 @@ export async function addGuest(
       createdAt: Date.now(),
       categoryId,
       categoryName: null,
-      sent: { wedding: false, reception: false, rsvp: false },
+      sent: {
+        wedding: false,
+        reception: false,
+        homecoming: false,
+        rsvp: false,
+      },
     };
     try {
       await client.execute({

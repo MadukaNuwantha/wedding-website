@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/session";
 import { setSetting } from "@/lib/settings";
-import type { CardConfig } from "@/lib/card-config";
+import { CARDS, type CardConfig, type CardKey } from "@/lib/card-config";
 
 export type SaveTemplatesState = { ok?: boolean; error?: string } | undefined;
 
@@ -13,13 +13,10 @@ export async function saveTemplatesAction(
 ): Promise<SaveTemplatesState> {
   if (!(await getSession())) return { error: "Not authorized." };
 
-  const wedding = String(formData.get("wedding") ?? "").slice(0, 5000);
-  const reception = String(formData.get("reception") ?? "").slice(0, 5000);
-  const rsvp = String(formData.get("rsvp") ?? "").slice(0, 5000);
-
-  await setSetting("template_wedding", wedding);
-  await setSetting("template_reception", reception);
-  await setSetting("template_rsvp", rsvp);
+  for (const key of ["wedding", "reception", "homecoming", "rsvp"] as const) {
+    const value = String(formData.get(key) ?? "").slice(0, 5000);
+    await setSetting(`template_${key}`, value);
+  }
 
   revalidatePath("/dashboard/invitations");
   return { ok: true };
@@ -40,16 +37,15 @@ function sanitizeCfg(c: unknown): CardConfig {
   };
 }
 
-export async function saveCardConfigAction(config: {
-  wedding: unknown;
-  reception: unknown;
-}): Promise<void> {
+export async function saveCardConfigAction(
+  config: Record<string, unknown>
+): Promise<void> {
   if (!(await getSession())) return;
 
-  const clean = {
-    wedding: sanitizeCfg(config?.wedding),
-    reception: sanitizeCfg(config?.reception),
-  };
+  const clean = {} as Record<CardKey, CardConfig>;
+  for (const c of CARDS) {
+    clean[c.key] = sanitizeCfg(config?.[c.key]);
+  }
   await setSetting("card_config", JSON.stringify(clean));
   revalidatePath("/dashboard/invitations");
 }

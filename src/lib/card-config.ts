@@ -1,4 +1,4 @@
-export type CardKey = "wedding" | "reception";
+export type CardKey = "wedding" | "reception" | "homecoming";
 export type CardFont = "serif" | "script";
 
 export type CardConfig = {
@@ -38,6 +38,16 @@ export const CARDS: CardMeta[] = [
     height: 1536,
     fileSuffix: "reception-invitation",
     default: { x: 0.5, y: 0.368, size: 0.05, color: "#22365d", font: "serif" },
+  },
+  {
+    key: "homecoming",
+    label: "Homecoming",
+    src: "/homecoming-invitation.png",
+    width: 1054,
+    height: 1492,
+    fileSuffix: "homecoming-invitation",
+    // Dark red card — the name is gold, on the dotted line.
+    default: { x: 0.5, y: 0.362, size: 0.05, color: "#e9c874", font: "serif" },
   },
 ];
 

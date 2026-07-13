@@ -117,7 +117,9 @@ async function downloadCard(key: CardKey, name: string, cfg: CardConfig) {
 }
 
 function cloneConfigs(c: CardConfigs): Record<CardKey, CardConfig> {
-  return { wedding: { ...c.wedding }, reception: { ...c.reception } };
+  return Object.fromEntries(
+    CARDS.map((meta) => [meta.key, { ...c[meta.key] }])
+  ) as Record<CardKey, CardConfig>;
 }
 
 function sameCfg(a: CardConfig, b: CardConfig): boolean {
@@ -239,6 +241,7 @@ function SendChips({ sent }: { sent: SentStatus }) {
   const items: [string, string, boolean][] = [
     ["W", "Wedding", sent.wedding],
     ["R", "Reception", sent.reception],
+    ["H", "Homecoming", sent.homecoming],
     ["L", "RSVP link", sent.rsvp],
   ];
   const count = items.filter(([, , on]) => on).length;
@@ -256,7 +259,7 @@ function SendChips({ sent }: { sent: SentStatus }) {
         </span>
       ))}
       <span className="ml-1 font-sans text-[0.7rem] text-ink/45">
-        {count}/3 sent
+        {count}/{items.length} sent
       </span>
     </div>
   );
@@ -357,7 +360,7 @@ export default function InvitationStudio({
 
   const fullySent = guests.filter((g) => {
     const s = effSent(g);
-    return s.wedding && s.reception && s.rsvp;
+    return s.wedding && s.reception && s.homecoming && s.rsvp;
   }).length;
 
   function displayName(g: Guest): string {
@@ -664,6 +667,20 @@ export default function InvitationStudio({
           </label>
           <label className="block md:col-span-2">
             <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
+              Homecoming
+            </span>
+            <textarea
+              name="homecoming"
+              rows={7}
+              value={tpl.homecoming}
+              onChange={(e) =>
+                setTpl((p) => ({ ...p, homecoming: e.target.value }))
+              }
+              className="w-full rounded-xl border border-line bg-white px-3 py-2 font-sans text-sm leading-relaxed text-ink outline-none focus:border-navy focus:ring-2 focus:ring-navy/12"
+            />
+          </label>
+          <label className="block md:col-span-2">
+            <span className="mb-1.5 block font-sans text-xs font-semibold uppercase tracking-[0.12em] text-navy-600">
               RSVP link message{" "}
               <span className="font-normal normal-case tracking-normal text-ink/45">
                 (text only — include &lt;link&gt;)
@@ -874,6 +891,27 @@ export default function InvitationStudio({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => handleSend("homecoming", modalGuest)}
+                      disabled={busy !== null}
+                      className={`${MODAL_SEND} flex-1 ${
+                        effSent(modalGuest).homecoming
+                          ? "ring-2 ring-green-300"
+                          : ""
+                      }`}
+                    >
+                      <WaIcon />
+                      {busy === `${modalGuest.id}:send-homecoming`
+                        ? "…"
+                        : "Homecoming"}
+                    </button>
+                    <SentToggle
+                      checked={effSent(modalGuest).homecoming}
+                      onChange={(v) => markSent(modalGuest.id, "homecoming", v)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
                       onClick={() => handleSendRsvp(modalGuest)}
                       disabled={busy !== null}
                       className={`${MODAL_SEND} flex-1 ${
@@ -914,6 +952,15 @@ export default function InvitationStudio({
                   >
                     <DownloadIcon />
                     {busy === `${modalGuest.id}:reception` ? "…" : "Reception"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownload("homecoming", modalGuest)}
+                    disabled={busy !== null}
+                    className={`${MODAL_DL} col-span-2`}
+                  >
+                    <DownloadIcon />
+                    {busy === `${modalGuest.id}:homecoming` ? "…" : "Homecoming"}
                   </button>
                 </div>
               </div>
