@@ -63,6 +63,41 @@ export async function listRsvps(): Promise<Rsvp[]> {
   return rs.rows.map(rowToRsvp);
 }
 
+export type RsvpTrack = {
+  id: string;
+  name: string;
+  title: string | null;
+  attending: Attendance | null; // null = sent, but no response yet
+};
+
+/**
+ * Guests who were sent the RSVP link, with their latest response (or null if
+ * they haven't replied yet) — used to chase up pending RSVPs.
+ */
+export async function rsvpTracking(): Promise<RsvpTrack[]> {
+  const client = await db();
+  const rs = await client.execute(`
+    SELECT g.id, g.name, g.title,
+      (SELECT r.attending FROM rsvps r
+        WHERE r.token = g.token
+        ORDER BY r.created_at DESC LIMIT 1) AS attending
+    FROM guests g
+    WHERE g.sent_rsvp IS NOT NULL
+    ORDER BY g.name COLLATE NOCASE ASC
+  `);
+  return rs.rows.map((r) => {
+    const raw = r.attending == null ? null : String(r.attending);
+    const attending: Attendance | null =
+      raw === "yes" ? "yes" : raw === "no" ? "no" : null;
+    return {
+      id: String(r.id),
+      name: String(r.name),
+      title: r.title == null ? null : String(r.title),
+      attending,
+    };
+  });
+}
+
 /** Distinct current guests who have at least one RSVP (for response rate). */
 export async function respondedGuestCount(): Promise<number> {
   const client = await db();

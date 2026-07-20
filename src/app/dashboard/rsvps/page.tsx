@@ -1,4 +1,5 @@
-import { listRsvps, rsvpStats } from "@/lib/rsvps";
+import { listRsvps, rsvpStats, rsvpTracking } from "@/lib/rsvps";
+import RsvpTracker from "./rsvp-tracker";
 
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleString("en-GB", {
@@ -11,7 +12,11 @@ function formatDate(ms: number): string {
 }
 
 export default async function RsvpsPage() {
-  const [rsvps, stats] = await Promise.all([listRsvps(), rsvpStats()]);
+  const [rsvps, stats, tracking] = await Promise.all([
+    listRsvps(),
+    rsvpStats(),
+    rsvpTracking(),
+  ]);
 
   const summary = [
     { label: "Responses", value: stats.total },
@@ -46,11 +51,34 @@ export default async function RsvpsPage() {
         ))}
       </div>
 
+      {/* RSVP follow-up: who you've sent the link to, and who has replied */}
+      <section className="mb-10">
+        <h2 className="mb-1 font-serif text-xl font-light text-navy">
+          RSVP follow-up
+        </h2>
+        <p className="mb-4 font-sans text-sm text-ink/55">
+          Track responses from the guests you sent the RSVP link to.
+        </p>
+        {tracking.length === 0 ? (
+          <p className="card rounded-2xl p-6 text-center font-sans text-sm text-ink/50">
+            No RSVP links marked as sent yet. Send RSVP links from{" "}
+            <span className="font-semibold text-navy">Invitation Create</span>{" "}
+            (or tick “Sent”) and they&apos;ll appear here.
+          </p>
+        ) : (
+          <RsvpTracker items={tracking} />
+        )}
+      </section>
+
+      {/* All responses (with details) */}
+      <h2 className="mb-4 font-serif text-xl font-light text-navy">
+        All responses
+      </h2>
       {rsvps.length === 0 ? (
         <div className="card rounded-2xl p-10 text-center sm:p-14">
-          <h2 className="font-serif text-2xl font-light text-navy">
+          <h3 className="font-serif text-2xl font-light text-navy">
             No RSVPs yet
-          </h2>
+          </h3>
           <p className="mx-auto mt-3 max-w-md font-sans text-sm text-ink/55">
             Responses submitted through the invitation form will appear here.
           </p>
